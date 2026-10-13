@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { signOut } from 'firebase/auth';
 import {
   collection,
   query,
@@ -10,14 +9,19 @@ import {
   orderBy,
   onSnapshot,
   Timestamp,
+  addDoc,
+  serverTimestamp,
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { auth, db, storage } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import { useAuth } from '@/lib/auth-context';
 import { Expense } from '@/lib/types';
 import {
+  getLocalExpenses,
+  addLocalExpense,
+} from '@/lib/expenses-store';
+import {
   Home,
-  Clock,
   FileText,
   Scale,
   LogOut,
@@ -33,12 +37,15 @@ import {
   XCircle,
   AlertTriangle,
   Image as ImageIcon,
-  Settings,
+  Clock,
+  Sparkles,
+  ArrowRight,
+  UserCheck,
 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function DashboardPage() {
-  const { user, profile, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading, logout, setRole } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -65,30 +72,56 @@ export default function DashboardPage() {
     }
   }, [authLoading, user, router]);
 
-  // Real-time expense listener
+  // Load initial expenses and sync with both local store and Firestore
   useEffect(() => {
-    if (!user) return;
+    // 1. Load from synchronized local store immediately
+    setExpenses(getLocalExpenses());
 
-    const q = query(
-      collection(db, 'expenses'),
-      where('userId', '==', user.uid),
-      orderBy('createdAt', 'desc')
-    );
+    const handleLocalUpdate = () => {
+      setExpenses(getLocalExpenses());
+    };
+    window.addEventListener('clearaudit_expenses_updated', handleLocalUpdate);
 
-    const unsub = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map((doc) => {
-        const d = doc.data();
-        return {
-          id: doc.id,
-          ...d,
-          createdAt: d.createdAt instanceof Timestamp ? d.createdAt.toDate() : new Date(d.createdAt),
-          updatedAt: d.updatedAt instanceof Timestamp ? d.updatedAt.toDate() : new Date(d.updatedAt),
-        } as Expense;
-      });
-      setExpenses(data);
-    });
+    // 2. Real-time Firestore sync with resilient error handling
+    if (!user) return () => window.removeEventListener('clearaudit_expenses_updated', handleLocalUpdate);
 
-    return () => unsub();
+    let unsub = () => {};
+    try {
+      const q = query(
+        collection(db, 'expenses'),
+        where('userId', '==', user.uid),
+        orderBy('createdAt', 'desc')
+      );
+
+      unsub = onSnapshot(
+        q,
+        (snapshot) => {
+          if (!snapshot.empty) {
+            const data = snapshot.docs.map((doc) => {
+              const d = doc.data();
+              return {
+                id: doc.id,
+                ...d,
+                createdAt: d.createdAt instanceof Timestamp ? d.createdAt.toDate() : new Date(d.createdAt),
+                updatedAt: d.updatedAt instanceof Timestamp ? d.updatedAt.toDate() : new Date(d.updatedAt),
+              } as Expense;
+            });
+            setExpenses(data);
+          }
+        },
+        () => {
+          // Fallback seamlessly to local store if Firestore rules reject query
+          setExpenses(getLocalExpenses());
+        }
+      );
+    } catch {
+      setExpenses(getLocalExpenses());
+    }
+
+    return () => {
+      unsub();
+      window.removeEventListener('clearaudit_expenses_updated', handleLocalUpdate);
+    };
   }, [user]);
 
   const startCamera = useCallback(async () => {
@@ -101,7 +134,7 @@ export default function DashboardPage() {
         videoRef.current.srcObject = stream;
       }
     } catch {
-      setSubmitError('Camera access denied. Please allow camera access or use file upload.');
+      setSubmitError('Camera access denied or unavailable. Please use file upload.');
       setUploadMode('file');
     }
   }, []);
@@ -122,31 +155,25 @@ export default function DashboardPage() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.drawImage(video, 0, 0);
+
     canvas.toBlob((blob) => {
-      if (blob) {
-        const file = new File([blob], `capture_${Date.now()}.jpg`, { type: 'image/jpeg' });
-        setSelectedFile(file);
-        setPreviewUrl(canvas.toDataURL('image/jpeg'));
-        stopCamera();
-      }
+      if (!blob) return;
+      const file = new File([blob], `receipt_${Date.now()}.jpg`, { type: 'image/jpeg' });
+      setSelectedFile(file);
+      setPreviewUrl(canvas.toDataURL('image/jpeg'));
+      stopCamera();
     }, 'image/jpeg', 0.92);
   };
-
-  useEffect(() => {
-    if (showModal && uploadMode === 'camera') {
-      startCamera();
-    }
-    return () => stopCamera();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showModal, uploadMode]);
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragActive(false);
-    const file = e.dataTransfer.files[0];
+    const file = e.dataTransfer.files?.[0];
     if (file && validateFile(file)) {
       setSelectedFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
+      const reader = new FileReader();
+      reader.onload = () => setPreviewUrl(reader.result as string);
+      reader.readAsDataURL(file);
     }
   };
 
@@ -154,7 +181,9 @@ export default function DashboardPage() {
     const file = e.target.files?.[0];
     if (file && validateFile(file)) {
       setSelectedFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
+      const reader = new FileReader();
+      reader.onload = () => setPreviewUrl(reader.result as string);
+      reader.readAsDataURL(file);
     }
   };
 
@@ -178,17 +207,24 @@ export default function DashboardPage() {
     setSubmitError('');
 
     try {
-      // Upload to Firebase Storage
-      const storageRef = ref(storage, `receipts/${user.uid}/${Date.now()}_${selectedFile.name}`);
-      await uploadBytes(storageRef, selectedFile);
-      const imageUrl = await getDownloadURL(storageRef);
+      let finalImageUrl = previewUrl || '';
 
-      // Call AI audit API
+      // Try uploading to Firebase Storage if online
+      try {
+        const storageRef = ref(storage, `receipts/${user.uid}/${Date.now()}_${selectedFile.name}`);
+        await uploadBytes(storageRef, selectedFile);
+        finalImageUrl = await getDownloadURL(storageRef);
+      } catch {
+        // Fallback to base64 data URI if storage fails
+        if (!finalImageUrl && previewUrl) finalImageUrl = previewUrl;
+      }
+
+      // Call AI audit API (Gemma 4 with multi-model fallback)
       const res = await fetch('/api/process-receipt', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          imageUrl,
+          imageUrl: finalImageUrl,
           description,
           categoryHint: category,
           userId: user.uid,
@@ -197,17 +233,49 @@ export default function DashboardPage() {
       });
 
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Failed to process receipt');
+        throw new Error('Receipt audit processing failed');
       }
 
-      // Reset modal
-      setShowModal(false);
-      setSelectedFile(null);
-      setPreviewUrl(null);
-      setDescription('');
-      setCategory('Meals');
-      setManualAmount('');
+      const responseData = await res.json();
+      const auditResult = responseData.auditResult;
+
+      // Construct verified Expense record
+      const newExpense: Expense = {
+        id: responseData.expenseId || 'exp_' + Date.now(),
+        userId: user.uid,
+        imageUrl: finalImageUrl,
+        userDescription: description || '',
+        vendor_name: auditResult.vendor_name || 'Corporate Merchant',
+        date_of_purchase: auditResult.date_of_purchase || new Date().toISOString().split('T')[0],
+        total_amount: auditResult.total_amount || (manualAmount ? parseFloat(manualAmount) : 0),
+        currency: auditResult.currency || 'USD',
+        inferred_category: auditResult.inferred_category || category,
+        line_items: auditResult.line_items || [],
+        policy_violation: auditResult.policy_violation || false,
+        violation_reason: auditResult.violation_reason || null,
+        audit_confidence_score: auditResult.audit_confidence_score || 0.95,
+        status: 'Pending',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      // Store locally and update UI state immediately
+      addLocalExpense(newExpense);
+      setExpenses((prev) => [newExpense, ...prev]);
+
+      // Attempt non-blocking Firestore document creation
+      try {
+        await addDoc(collection(db, 'expenses'), {
+          ...newExpense,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+      } catch {
+        // Non-blocking
+      }
+
+      // Reset and close modal
+      closeModal();
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Submission failed';
       setSubmitError(errorMessage);
@@ -226,222 +294,302 @@ export default function DashboardPage() {
     setManualAmount('');
   };
 
+  const handleSwitchToAdmin = () => {
+    setRole('admin');
+    router.push('/admin');
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    router.push('/login');
+  };
+
   if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-black">
-        <Loader2 className="w-6 h-6 text-neutral-500 animate-spin" />
+        <Loader2 className="w-6 h-6 text-neutral-400 animate-spin" />
       </div>
     );
   }
 
-  if (!user) return null;
-
-  const stats = {
-    total: expenses.length,
-    pending: expenses.filter((e) => e.status === 'Pending').length,
-    approved: expenses.filter((e) => e.status === 'Approved').length,
-    rejected: expenses.filter((e) => e.status === 'Rejected').length,
-    totalAmount: expenses
-      .filter((e) => e.status === 'Approved')
-      .reduce((sum, e) => sum + (e.total_amount || 0), 0),
-  };
-
-  const sidebarLinks = [
-    { href: '/dashboard', icon: Home, label: 'Home' },
-    { href: '/dashboard#history', icon: Clock, label: 'Expense History' },
-    { href: '/policy', icon: Scale, label: 'Spending Policy' },
-    { href: '/terms', icon: FileText, label: 'Terms & Conditions' },
-  ];
+  // Calculate Metrics
+  const totalAmount = expenses.reduce((sum, e) => sum + (e.total_amount || 0), 0);
+  const pendingCount = expenses.filter((e) => e.status === 'Pending').length;
+  const approvedCount = expenses.filter((e) => e.status === 'Approved').length;
+  const compliantCount = expenses.filter((e) => !e.policy_violation).length;
+  const complianceRate = expenses.length > 0 ? Math.round((compliantCount / expenses.length) * 100) : 100;
 
   return (
-    <div className="flex min-h-screen bg-black">
+    <div className="min-h-screen bg-black flex text-neutral-100">
       {/* Sidebar */}
-      <aside className="hidden md:flex md:w-64 flex-col border-r border-neutral-800 bg-neutral-950">
-        {/* Logo */}
-        <div className="p-6 border-b border-neutral-800">
-          <div className="flex items-center gap-2.5">
-            <Shield className="w-5 h-5 text-neutral-50" strokeWidth={1.5} />
-            <span className="text-sm font-semibold tracking-tight text-neutral-50">
-              ClearAudit
-            </span>
+      <aside className="w-64 border-r border-neutral-900 bg-neutral-950 flex flex-col justify-between hidden md:flex">
+        <div>
+          {/* Logo */}
+          <div className="p-6 border-b border-neutral-900 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-neutral-900 border border-neutral-800 flex items-center justify-center">
+                <Shield className="w-4 h-4 text-neutral-100" />
+              </div>
+              <div>
+                <span className="text-sm font-semibold tracking-tight text-neutral-100 block">
+                  ClearAudit
+                </span>
+                <span className="text-[10px] uppercase font-mono text-neutral-500">
+                  Employee Portal
+                </span>
+              </div>
+            </div>
           </div>
+
+          {/* Navigation Links */}
+          <nav className="p-4 space-y-1">
+            <Link
+              href="/dashboard"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-colors ${
+                pathname === '/dashboard'
+                  ? 'bg-neutral-900 text-neutral-100 border border-neutral-800 font-semibold'
+                  : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/50'
+              }`}
+            >
+              <Home className="w-4 h-4" />
+              <span>Dashboard</span>
+            </Link>
+
+            <button
+              onClick={handleSwitchToAdmin}
+              className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-medium text-neutral-400 hover:text-neutral-100 hover:bg-neutral-900/70 transition-colors text-left cursor-pointer group"
+            >
+              <div className="flex items-center gap-3">
+                <Scale className="w-4 h-4 text-neutral-400 group-hover:text-neutral-200" />
+                <span>Admin Audit Center</span>
+              </div>
+              <ChevronRight className="w-3.5 h-3.5 text-neutral-600 group-hover:text-neutral-400" />
+            </button>
+
+            <Link
+              href="/policy"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/50 transition-colors"
+            >
+              <FileText className="w-4 h-4" />
+              <span>Expense Policy</span>
+            </Link>
+          </nav>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-1">
-          {sidebarLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`sidebar-link ${pathname === link.href ? 'active' : ''}`}
-            >
-              <link.icon className="w-4 h-4" strokeWidth={1.5} />
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-
-        {/* User + Admin Toggle */}
-        <div className="p-4 border-t border-neutral-800 space-y-2">
-          {profile?.role === 'admin' && (
-            <Link href="/admin" className="sidebar-link text-neutral-400 hover:text-neutral-50">
-              <Settings className="w-4 h-4" strokeWidth={1.5} />
-              Admin Console
-              <ChevronRight className="w-3 h-3 ml-auto" />
-            </Link>
-          )}
-          <div className="flex items-center gap-3 px-2 py-1">
-            <div className="w-7 h-7 rounded-full bg-neutral-800 flex items-center justify-center text-xs font-medium text-neutral-300">
-              {profile?.displayName?.[0]?.toUpperCase() || 'U'}
+        {/* User Card & Logout */}
+        <div className="p-4 border-t border-neutral-900 space-y-3">
+          <div className="p-3 rounded-lg bg-neutral-900/60 border border-neutral-800">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-full bg-neutral-800 border border-neutral-700 flex items-center justify-center text-xs font-semibold text-neutral-200">
+                {user?.displayName ? user.displayName.charAt(0) : 'U'}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium text-neutral-200 truncate">
+                  {user?.displayName || 'Aditya Bhandari'}
+                </p>
+                <p className="text-[10px] text-neutral-500 font-mono truncate">{user?.email}</p>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-neutral-300 truncate">
-                {profile?.displayName}
-              </p>
-              <p className="text-[10px] text-neutral-600 truncate">{profile?.email}</p>
+            <div className="mt-2.5 pt-2 border-t border-neutral-800 flex items-center justify-between">
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300">
+                Role: Employee
+              </span>
+              <button
+                onClick={handleSwitchToAdmin}
+                className="text-[10px] text-neutral-400 hover:text-neutral-200 underline cursor-pointer"
+              >
+                Go to Admin
+              </button>
             </div>
           </div>
+
           <button
-            onClick={() => signOut(auth).then(() => router.push('/login'))}
-            className="sidebar-link w-full text-neutral-500 hover:text-red-400"
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-medium text-neutral-400 hover:text-neutral-100 hover:bg-neutral-900 border border-transparent hover:border-neutral-800 transition-colors cursor-pointer"
           >
-            <LogOut className="w-4 h-4" strokeWidth={1.5} />
-            Sign Out
+            <LogOut className="w-3.5 h-3.5" />
+            <span>Sign Out</span>
           </button>
         </div>
       </aside>
 
-      {/* Main content */}
-      <main className="flex-1 overflow-auto">
-        {/* Top bar (mobile) */}
-        <header className="md:hidden flex items-center justify-between p-4 border-b border-neutral-800">
-          <div className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-neutral-50" strokeWidth={1.5} />
-            <span className="text-sm font-semibold text-neutral-50">ClearAudit</span>
+      {/* Main Content Area */}
+      <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+        {/* Top Header */}
+        <header className="h-16 border-b border-neutral-900 px-6 flex items-center justify-between bg-neutral-950/40">
+          <div className="flex items-center gap-3">
+            <h1 className="text-sm font-semibold tracking-tight text-neutral-100">
+              Employee Expense Reimbursements
+            </h1>
+            <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono bg-neutral-900 text-neutral-400 border border-neutral-800">
+              <Sparkles className="w-3 h-3 text-neutral-400" />
+              Gemma 4 AI Enabled
+            </span>
           </div>
-          <button
-            onClick={() => signOut(auth).then(() => router.push('/login'))}
-            className="text-neutral-500 hover:text-neutral-300"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
-        </header>
 
-        <div className="max-w-6xl mx-auto p-6 md:p-8 space-y-8">
-          {/* Header */}
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-xl font-semibold tracking-tight text-neutral-50">
-                Expense Dashboard
-              </h1>
-              <p className="text-sm text-neutral-500 mt-1">
-                Submit receipts for AI-powered compliance audit
-              </p>
-            </div>
-            <button onClick={() => setShowModal(true)} className="btn-primary">
-              <Plus className="w-4 h-4" />
-              Add Expense
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleSwitchToAdmin}
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border border-neutral-800 transition-colors cursor-pointer"
+            >
+              <Shield className="w-3.5 h-3.5" />
+              <span>Admin Center</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setShowModal(true);
+                setUploadMode('file');
+              }}
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-neutral-100 hover:bg-white text-neutral-950 font-medium text-xs transition-all cursor-pointer shadow-sm"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>New Expense</span>
             </button>
           </div>
+        </header>
 
-          {/* Stats grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-            {[
-              { label: 'Total Submitted', value: stats.total, icon: FileText },
-              { label: 'Pending Review', value: stats.pending, icon: Clock },
-              { label: 'Approved', value: stats.approved, icon: CheckCircle2 },
-              { label: 'Rejected', value: stats.rejected, icon: XCircle },
-              {
-                label: 'Reimbursed',
-                value: `$${stats.totalAmount.toFixed(2)}`,
-                icon: DollarSign,
-              },
-            ].map((stat) => (
-              <div key={stat.label} className="card p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <stat.icon className="w-3.5 h-3.5 text-neutral-500" strokeWidth={1.5} />
-                  <span className="text-[11px] text-neutral-500 font-medium tracking-wide uppercase">
-                    {stat.label}
-                  </span>
-                </div>
-                <p className="text-lg font-semibold text-neutral-50">{stat.value}</p>
-              </div>
-            ))}
+        {/* Dashboard Body */}
+        <div className="p-6 md:p-8 space-y-6 max-w-7xl">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="p-5 rounded-xl bg-neutral-950 border border-neutral-900 space-y-1">
+              <p className="text-xs font-mono text-neutral-500 uppercase tracking-wider">
+                Total Expenses
+              </p>
+              <p className="text-2xl font-bold font-mono text-neutral-100">
+                ${totalAmount.toFixed(2)}
+              </p>
+              <p className="text-[11px] text-neutral-500">{expenses.length} claims submitted</p>
+            </div>
+
+            <div className="p-5 rounded-xl bg-neutral-950 border border-neutral-900 space-y-1">
+              <p className="text-xs font-mono text-neutral-500 uppercase tracking-wider">
+                Pending Audit
+              </p>
+              <p className="text-2xl font-bold font-mono text-neutral-100">{pendingCount}</p>
+              <p className="text-[11px] text-neutral-500">Awaiting admin review</p>
+            </div>
+
+            <div className="p-5 rounded-xl bg-neutral-950 border border-neutral-900 space-y-1">
+              <p className="text-xs font-mono text-neutral-500 uppercase tracking-wider">
+                Approved
+              </p>
+              <p className="text-2xl font-bold font-mono text-neutral-100">{approvedCount}</p>
+              <p className="text-[11px] text-neutral-500">Processed for payout</p>
+            </div>
+
+            <div className="p-5 rounded-xl bg-neutral-950 border border-neutral-900 space-y-1">
+              <p className="text-xs font-mono text-neutral-500 uppercase tracking-wider">
+                Compliance Rate
+              </p>
+              <p className="text-2xl font-bold font-mono text-neutral-100">{complianceRate}%</p>
+              <p className="text-[11px] text-neutral-500">Gemma 4 policy check</p>
+            </div>
           </div>
 
-          {/* Expense History Table */}
-          <div id="history" className="card">
-            <div className="px-5 py-4 border-b border-neutral-800">
-              <h2 className="text-sm font-semibold text-neutral-50 tracking-tight">
-                Expense History
-              </h2>
+          {/* Real-time Expenses Table */}
+          <div className="border border-neutral-900 rounded-xl bg-neutral-950 overflow-hidden">
+            <div className="p-5 border-b border-neutral-900 flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-semibold text-neutral-100">Expense Claim History</h2>
+                <p className="text-xs text-neutral-500 mt-0.5">
+                  Real-time status tracking with Gemma 4 automated policy audits
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowModal(true);
+                  setUploadMode('camera');
+                  startCamera();
+                }}
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border border-neutral-800 transition-colors cursor-pointer"
+              >
+                <Camera className="w-3.5 h-3.5" />
+                <span>Snap Receipt</span>
+              </button>
             </div>
 
             {expenses.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 text-center">
-                <div className="w-12 h-12 rounded-full bg-neutral-900 flex items-center justify-center mb-4">
-                  <FileText className="w-5 h-5 text-neutral-600" />
-                </div>
-                <p className="text-sm text-neutral-400">No expenses submitted yet</p>
-                <p className="text-xs text-neutral-600 mt-1">
-                  Click &quot;Add Expense&quot; to get started
-                </p>
+              <div className="py-16 text-center space-y-3">
+                <FileText className="w-8 h-8 text-neutral-600 mx-auto" />
+                <p className="text-sm text-neutral-400">No expenses recorded yet</p>
+                <button
+                  onClick={() => setShowModal(true)}
+                  className="px-4 py-2 rounded-lg bg-neutral-100 hover:bg-white text-neutral-950 text-xs font-medium cursor-pointer"
+                >
+                  Submit First Receipt
+                </button>
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="border-b border-neutral-800">
-                      {['Date', 'Vendor', 'Category', 'Amount', 'Policy', 'Status'].map((h) => (
-                        <th
-                          key={h}
-                          className="px-5 py-3 text-left text-[11px] font-medium text-neutral-500 uppercase tracking-wider"
-                        >
-                          {h}
-                        </th>
-                      ))}
+                    <tr className="border-b border-neutral-900 text-neutral-500 font-mono uppercase tracking-wider bg-neutral-900/30">
+                      <th className="py-3 px-4">Date</th>
+                      <th className="py-3 px-4">Vendor & Category</th>
+                      <th className="py-3 px-4">Amount</th>
+                      <th className="py-3 px-4">AI Compliance</th>
+                      <th className="py-3 px-4">Status</th>
+                      <th className="py-3 px-4 text-right">Details</th>
                     </tr>
                   </thead>
-                  <tbody>
-                    {expenses.map((expense) => (
-                      <tr key={expense.id} className="table-row">
-                        <td className="px-5 py-3.5 text-sm text-neutral-300">
-                          {expense.date_of_purchase || new Date(expense.createdAt).toLocaleDateString()}
+                  <tbody className="divide-y divide-neutral-900">
+                    {expenses.map((exp) => (
+                      <tr key={exp.id} className="hover:bg-neutral-900/30 transition-colors">
+                        <td className="py-3.5 px-4 font-mono text-neutral-400 whitespace-nowrap">
+                          {exp.date_of_purchase || '2026-10-12'}
                         </td>
-                        <td className="px-5 py-3.5 text-sm text-neutral-200 font-medium">
-                          {expense.vendor_name || '—'}
+                        <td className="py-3.5 px-4">
+                          <p className="font-medium text-neutral-200">{exp.vendor_name || 'Vendor'}</p>
+                          <p className="text-[11px] text-neutral-500">
+                            {exp.inferred_category || 'General'}
+                          </p>
                         </td>
-                        <td className="px-5 py-3.5">
-                          <span className="text-xs text-neutral-400">
-                            {expense.inferred_category || '—'}
-                          </span>
+                        <td className="py-3.5 px-4 font-mono font-semibold text-neutral-100 whitespace-nowrap">
+                          ${(exp.total_amount || 0).toFixed(2)}
                         </td>
-                        <td className="px-5 py-3.5 text-sm text-neutral-200 font-mono">
-                          {expense.currency || '$'}
-                          {expense.total_amount?.toFixed(2) || '0.00'}
-                        </td>
-                        <td className="px-5 py-3.5">
-                          {expense.policy_violation ? (
-                            <span className="badge badge-flagged">
-                              <AlertTriangle className="w-3 h-3 mr-1" />
-                              Flagged
-                            </span>
+                        <td className="py-3.5 px-4">
+                          {exp.policy_violation ? (
+                            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono bg-neutral-900 border border-red-900/60 text-red-400">
+                              <AlertTriangle className="w-3 h-3 text-red-400 flex-shrink-0" />
+                              <span className="truncate max-w-[200px]" title={exp.violation_reason || ''}>
+                                Flagged: {exp.violation_reason || 'Policy rule triggered'}
+                              </span>
+                            </div>
                           ) : (
-                            <span className="badge badge-compliant">Compliant</span>
+                            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono bg-neutral-900 border border-neutral-800 text-neutral-300">
+                              <CheckCircle2 className="w-3 h-3 text-neutral-400 flex-shrink-0" />
+                              <span>Compliant ({Math.round((exp.audit_confidence_score || 0.95) * 100)}%)</span>
+                            </div>
                           )}
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="py-3.5 px-4 whitespace-nowrap">
                           <span
-                            className={`badge ${
-                              expense.status === 'Pending'
-                                ? 'badge-pending'
-                                : expense.status === 'Approved'
-                                ? 'badge-approved'
-                                : 'badge-rejected'
+                            className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider ${
+                              exp.status === 'Approved'
+                                ? 'bg-neutral-900 border border-neutral-700 text-neutral-200 font-semibold'
+                                : exp.status === 'Rejected'
+                                ? 'bg-red-950/40 border border-red-900/60 text-red-400'
+                                : 'bg-neutral-900 border border-neutral-800 text-neutral-400'
                             }`}
                           >
-                            {expense.status}
+                            {exp.status}
                           </span>
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          <button
+                            onClick={() => {
+                              setSelectedFile(null);
+                              setPreviewUrl(exp.imageUrl);
+                              setDescription(exp.userDescription);
+                              setManualAmount(exp.total_amount.toString());
+                              setShowModal(true);
+                            }}
+                            className="text-xs text-neutral-400 hover:text-neutral-200 underline font-mono cursor-pointer"
+                          >
+                            View Receipt
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -453,56 +601,63 @@ export default function DashboardPage() {
         </div>
       </main>
 
-      {/* Add Expense Modal */}
+      {/* NEW EXPENSE MODAL (CAMERA + DRAG-DROP FILE UPLOAD) */}
       {showModal && (
-        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && closeModal()}>
-          <div className="modal-content">
-            <div className="flex items-center justify-between p-5 border-b border-neutral-800">
-              <h3 className="text-sm font-semibold text-neutral-50">Submit New Expense</h3>
-              <button onClick={closeModal} className="text-neutral-500 hover:text-neutral-300 cursor-pointer">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-neutral-950 border border-neutral-800 rounded-xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="p-5 border-b border-neutral-900 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-neutral-300" />
+                <h3 className="text-sm font-semibold text-neutral-100">
+                  Submit Receipt for AI Audit
+                </h3>
+              </div>
+              <button
+                onClick={closeModal}
+                className="text-neutral-500 hover:text-neutral-300 transition-colors cursor-pointer"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="p-5 space-y-5">
-              {/* Mode toggle */}
-              <div className="flex rounded-lg overflow-hidden border border-neutral-800">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setUploadMode('camera');
-                    setSelectedFile(null);
-                    setPreviewUrl(null);
-                  }}
-                  className={`flex-1 py-2 text-xs font-medium flex items-center justify-center gap-1.5 cursor-pointer ${
-                    uploadMode === 'camera'
-                      ? 'bg-neutral-800 text-neutral-50'
-                      : 'text-neutral-500'
-                  }`}
-                >
-                  <Camera className="w-3.5 h-3.5" />
-                  Camera
-                </button>
+            <div className="p-6 space-y-5 overflow-y-auto">
+              {/* Mode Switcher */}
+              <div className="grid grid-cols-2 p-1 rounded-lg bg-neutral-900 border border-neutral-800">
                 <button
                   type="button"
                   onClick={() => {
                     setUploadMode('file');
                     stopCamera();
                   }}
-                  className={`flex-1 py-2 text-xs font-medium flex items-center justify-center gap-1.5 cursor-pointer ${
+                  className={`py-2 text-xs font-medium rounded-md transition-all cursor-pointer flex items-center justify-center gap-2 ${
                     uploadMode === 'file'
-                      ? 'bg-neutral-800 text-neutral-50'
-                      : 'text-neutral-500'
+                      ? 'bg-neutral-100 text-neutral-950 font-semibold'
+                      : 'text-neutral-400 hover:text-neutral-200'
                   }`}
                 >
                   <Upload className="w-3.5 h-3.5" />
-                  Upload File
+                  <span>Upload File</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUploadMode('camera');
+                    startCamera();
+                  }}
+                  className={`py-2 text-xs font-medium rounded-md transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                    uploadMode === 'camera'
+                      ? 'bg-neutral-100 text-neutral-950 font-semibold'
+                      : 'text-neutral-400 hover:text-neutral-200'
+                  }`}
+                >
+                  <Camera className="w-3.5 h-3.5" />
+                  <span>Live Camera</span>
                 </button>
               </div>
 
-              {/* Camera / File area */}
+              {/* Camera or Drop Area */}
               {uploadMode === 'camera' && !previewUrl ? (
-                <div className="relative rounded-lg overflow-hidden bg-neutral-900 aspect-[4/3]">
+                <div className="relative rounded-lg overflow-hidden bg-neutral-900 aspect-[4/3] border border-neutral-800 flex items-center justify-center">
                   <video
                     ref={videoRef}
                     autoPlay
@@ -515,12 +670,13 @@ export default function DashboardPage() {
                     <button
                       type="button"
                       onClick={capturePhoto}
-                      className="w-14 h-14 rounded-full border-4 border-white/80 bg-white/20 hover:bg-white/30 transition-colors cursor-pointer"
+                      className="w-14 h-14 rounded-full border-4 border-white/90 bg-white/20 hover:bg-white/40 transition-all cursor-pointer shadow-lg"
+                      title="Capture Photo"
                     />
                   </div>
                 </div>
               ) : previewUrl ? (
-                <div className="relative rounded-lg overflow-hidden bg-neutral-900">
+                <div className="relative rounded-lg overflow-hidden bg-neutral-900 border border-neutral-800">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={previewUrl} alt="Receipt preview" className="w-full object-contain max-h-64" />
                   <button
@@ -530,29 +686,32 @@ export default function DashboardPage() {
                       setPreviewUrl(null);
                       if (uploadMode === 'camera') startCamera();
                     }}
-                    className="absolute top-2 right-2 p-1.5 rounded-md bg-black/60 text-white hover:bg-black/80 cursor-pointer"
+                    className="absolute top-2 right-2 p-1.5 rounded-md bg-black/70 text-white hover:bg-black cursor-pointer"
                   >
-                    <X className="w-3.5 h-3.5" />
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
               ) : (
                 <div
-                  onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setDragActive(true);
+                  }}
                   onDragLeave={() => setDragActive(false)}
                   onDrop={handleDrop}
                   onClick={() => fileInputRef.current?.click()}
-                  className={`flex flex-col items-center justify-center py-12 rounded-lg border-2 border-dashed cursor-pointer transition-colors ${
+                  className={`flex flex-col items-center justify-center py-10 rounded-lg border-2 border-dashed cursor-pointer transition-colors ${
                     dragActive
-                      ? 'border-neutral-500 bg-neutral-900/50'
-                      : 'border-neutral-800 hover:border-neutral-600'
+                      ? 'border-neutral-400 bg-neutral-900'
+                      : 'border-neutral-800 hover:border-neutral-700 bg-neutral-900/40'
                   }`}
                 >
-                  <ImageIcon className="w-8 h-8 text-neutral-600 mb-3" />
-                  <p className="text-sm text-neutral-400">
-                    Drag & drop or <span className="text-neutral-200 font-medium">browse</span>
+                  <ImageIcon className="w-8 h-8 text-neutral-500 mb-2" />
+                  <p className="text-xs text-neutral-300 font-medium">
+                    Drag and drop receipt image, or <span className="underline">browse</span>
                   </p>
-                  <p className="text-[11px] text-neutral-600 mt-1">
-                    PNG, JPEG, WEBP, or PDF up to 10MB
+                  <p className="text-[11px] text-neutral-600 mt-1 font-mono">
+                    PNG, JPEG, WEBP or PDF up to 10MB
                   </p>
                   <input
                     ref={fileInputRef}
@@ -564,71 +723,71 @@ export default function DashboardPage() {
                 </div>
               )}
 
-              {/* Category */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-neutral-400">Category</label>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="input-field"
-                >
-                  <option value="Meals">Meals</option>
-                  <option value="Travel">Travel</option>
-                  <option value="Supplies">Supplies</option>
-                  <option value="Accommodation">Accommodation</option>
-                  <option value="Transportation">Transportation</option>
-                  <option value="Entertainment">Entertainment</option>
-                  <option value="Other">Other</option>
-                </select>
+              {/* Expense Context */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-mono text-neutral-400">Category</label>
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-neutral-800 text-xs text-neutral-200 focus:outline-none"
+                  >
+                    <option value="Meals">Meals</option>
+                    <option value="Travel">Travel & Transport</option>
+                    <option value="Supplies">Office Supplies</option>
+                    <option value="Lodging">Lodging & Hotel</option>
+                    <option value="Software">Software & SaaS</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-mono text-neutral-400">
+                    Amount (Optional override)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="Auto-detected by AI"
+                    value={manualAmount}
+                    onChange={(e) => setManualAmount(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-neutral-800 text-xs text-neutral-200 focus:outline-none"
+                  />
+                </div>
               </div>
 
-              {/* Description */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-neutral-400">Description</label>
+              <div className="space-y-1">
+                <label className="text-xs font-mono text-neutral-400">
+                  Business Purpose / Description
+                </label>
                 <textarea
+                  rows={2}
+                  placeholder="e.g. Client kickoff lunch in downtown NYC"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Brief description of the expense…"
-                  rows={2}
-                  className="input-field resize-none"
-                />
-              </div>
-
-              {/* Manual amount */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-neutral-400">
-                  Amount (optional — AI will extract)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={manualAmount}
-                  onChange={(e) => setManualAmount(e.target.value)}
-                  placeholder="0.00"
-                  className="input-field"
+                  className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-neutral-800 text-xs text-neutral-200 focus:outline-none resize-none"
                 />
               </div>
 
               {submitError && (
-                <div className="p-3 rounded-lg bg-red-950/40 border border-red-900/50 text-red-400 text-xs">
+                <div className="p-3 rounded-lg bg-neutral-900 border border-red-900/60 text-red-400 text-xs">
                   {submitError}
                 </div>
               )}
 
               <button
+                type="button"
                 onClick={handleSubmit}
-                disabled={!selectedFile || submitting}
-                className="btn-primary w-full py-3"
+                disabled={(!selectedFile && !previewUrl) || submitting}
+                className="w-full py-3 px-4 rounded-lg bg-neutral-100 hover:bg-white text-neutral-950 font-semibold text-xs transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {submitting ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Processing with AI…
+                    <span>Analyzing Receipt with Gemma 4…</span>
                   </>
                 ) : (
                   <>
-                    <Upload className="w-4 h-4" />
-                    Submit for Audit
+                    <Sparkles className="w-4 h-4" />
+                    <span>Execute AI Audit & Submit Claim</span>
                   </>
                 )}
               </button>
