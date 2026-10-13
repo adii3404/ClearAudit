@@ -8,7 +8,6 @@ import {
   Loader2,
   ArrowRight,
   Sparkles,
-  KeyRound,
   User,
   Eye,
   EyeOff,
@@ -39,16 +38,29 @@ export default function LoginPage() {
   const DEMO_ADMIN = { id: 'admin@clearaudit.com', pass: 'admin123' };
   const DEMO_EMPLOYEE = { id: 'employee@clearaudit.com', pass: 'emp123' };
 
-  // Autofill handlers
-  const handleFillAdmin = () => {
+  // Autofill handlers for Admin
+  const handleAdminIdHint = () => {
     setAdminId(DEMO_ADMIN.id);
-    setAdminPass(DEMO_ADMIN.pass);
+    if (!adminPass) setAdminPass(DEMO_ADMIN.pass);
     setError('');
   };
 
-  const handleFillEmployee = () => {
+  const handleAdminPassHint = () => {
+    setAdminPass(DEMO_ADMIN.pass);
+    if (!adminId) setAdminId(DEMO_ADMIN.id);
+    setError('');
+  };
+
+  // Autofill handlers for Employee
+  const handleEmployeeIdHint = () => {
     setEmployeeId(DEMO_EMPLOYEE.id);
+    if (!employeePass) setEmployeePass(DEMO_EMPLOYEE.pass);
+    setError('');
+  };
+
+  const handleEmployeePassHint = () => {
     setEmployeePass(DEMO_EMPLOYEE.pass);
+    if (!employeeId) setEmployeeId(DEMO_EMPLOYEE.id);
     setError('');
   };
 
@@ -60,7 +72,7 @@ export default function LoginPage() {
 
     if (activeRole === 'admin') {
       if (!adminId || !adminPass) {
-        setError('Please enter Admin ID and Password, or click the hint button to autofill.');
+        setError('Please enter Admin ID and Password, or click Hint.');
         setLoggingIn(false);
         return;
       }
@@ -68,7 +80,7 @@ export default function LoginPage() {
       router.push('/admin');
     } else {
       if (!employeeId || !employeePass) {
-        setError('Please enter Employee ID and Password, or click the hint button to autofill.');
+        setError('Please enter Employee ID and Password, or click Hint.');
         setLoggingIn(false);
         return;
       }
@@ -134,9 +146,9 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Right panel - Simple Toggle Window & Role Card */}
+      {/* Right panel - Simple Toggle Window & Clean Role Form */}
       <div className="flex-1 flex items-center justify-center p-6 md:p-12 bg-neutral-50">
-        <div className="w-full max-w-md space-y-6">
+        <div className="w-full max-w-md space-y-5">
           {/* Mobile title */}
           <div className="lg:hidden flex items-center gap-3 justify-center mb-2">
             <div className="w-8 h-8 rounded-lg bg-neutral-900 flex items-center justify-center">
@@ -146,22 +158,6 @@ export default function LoginPage() {
               ClearAudit Corporate Expense Auditor
             </span>
           </div>
-
-          <div className="text-center space-y-1">
-            <h2 className="text-2xl font-extrabold tracking-tight text-neutral-900">
-              Sign In to Your Workspace
-            </h2>
-            <p className="text-xs text-neutral-500">
-              Select your role toggle below to access your audit portal
-            </p>
-          </div>
-
-          {error && (
-            <div className="p-3.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-600" />
-              <span>{error}</span>
-            </div>
-          )}
 
           {/* THE SIMPLE PILL TOGGLE FOR ADMIN & EMPLOYEE */}
           <div className="flex justify-center">
@@ -199,141 +195,133 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* THE SINGLE CARD FOR BOTH WITH HINTS */}
-          <div className="bg-white border border-neutral-200 rounded-2xl p-6 md:p-8 shadow-sm space-y-5">
-            {/* Header & Role Info */}
-            <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
-              <div>
-                <h3 className="text-base font-bold text-neutral-900">
-                  {activeRole === 'admin' ? 'Admin Compliance Login' : 'Employee Portal Login'}
-                </h3>
-                <p className="text-xs text-neutral-500 mt-0.5">
-                  {activeRole === 'admin'
-                    ? 'Audit console, claim review & policy approvals'
-                    : 'Receipt capture, line-item audit & reimbursement feed'}
-                </p>
-              </div>
-              <span className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-neutral-100 text-neutral-800 border border-neutral-200 font-bold uppercase">
-                {activeRole}
-              </span>
+          {error && (
+            <div className="p-3.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-600" />
+              <span>{error}</span>
             </div>
+          )}
 
-            {/* HARDCODED ID AND PASS SMALL HINT BUTTON THAT AUTOFILLS */}
-            {activeRole === 'admin' ? (
-              <button
-                type="button"
-                onClick={handleFillAdmin}
-                className="w-full p-3 rounded-xl bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 text-left transition-all cursor-pointer group flex items-center justify-between shadow-2xs"
-              >
-                <div className="flex items-center gap-2">
-                  <KeyRound className="w-4 h-4 text-neutral-700 group-hover:text-neutral-900" />
-                  <span className="text-xs text-neutral-700 font-medium">
-                    Hint: Admin demo credentials
-                  </span>
-                </div>
-                <span className="text-[11px] font-mono font-bold text-neutral-900 underline">
-                  Click to fill (admin@clearaudit.com / admin123)
-                </span>
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleFillEmployee}
-                className="w-full p-3 rounded-xl bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 text-left transition-all cursor-pointer group flex items-center justify-between shadow-2xs"
-              >
-                <div className="flex items-center gap-2">
-                  <KeyRound className="w-4 h-4 text-neutral-700 group-hover:text-neutral-900" />
-                  <span className="text-xs text-neutral-700 font-medium">
-                    Hint: Employee demo credentials
-                  </span>
-                </div>
-                <span className="text-[11px] font-mono font-bold text-neutral-900 underline">
-                  Click to fill (employee@clearaudit.com / emp123)
-                </span>
-              </button>
-            )}
-
-            {/* FORM */}
+          {/* THE SINGLE CLEAN CARD WITHOUT REDUNDANT HEADINGS */}
+          <div className="bg-white border border-neutral-200 rounded-2xl p-6 md:p-8 shadow-sm">
             <form onSubmit={handleSubmit} className="space-y-4">
               {activeRole === 'admin' ? (
                 <>
+                  {/* ADMIN ID WITH HINT BUTTON INSIDE BOX */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-neutral-700 block">
                       Admin ID
                     </label>
-                    <div className="relative">
-                      <User className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <div className="relative flex items-center">
+                      <User className="w-4 h-4 text-neutral-400 absolute left-3 pointer-events-none" />
                       <input
                         type="text"
                         value={adminId}
                         onChange={(e) => setAdminId(e.target.value)}
                         placeholder="admin@clearaudit.com"
                         required
-                        className="w-full pl-9 pr-3.5 py-2.5 rounded-lg bg-white border border-neutral-300 text-neutral-900 text-xs focus:outline-none focus:border-neutral-900 transition-colors"
+                        className="w-full pl-9 pr-16 py-2.5 rounded-lg bg-white border border-neutral-300 text-neutral-900 text-xs focus:outline-none focus:border-neutral-900 transition-colors"
                       />
+                      <button
+                        type="button"
+                        onClick={handleAdminIdHint}
+                        className="absolute right-2 px-2.5 py-1 text-[11px] font-mono font-semibold rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-300 cursor-pointer transition-colors shadow-2xs"
+                      >
+                        Hint
+                      </button>
                     </div>
                   </div>
+
+                  {/* PASSWORD WITH EYE & HINT BUTTON INSIDE BOX */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-neutral-700 block">
                       Password
                     </label>
-                    <div className="relative">
+                    <div className="relative flex items-center">
                       <input
                         type={showPassword ? 'text' : 'password'}
                         value={adminPass}
                         onChange={(e) => setAdminPass(e.target.value)}
                         placeholder="••••••••"
                         required
-                        className="w-full px-3.5 pr-10 py-2.5 rounded-lg bg-white border border-neutral-300 text-neutral-900 text-xs focus:outline-none focus:border-neutral-900 transition-colors"
+                        className="w-full pl-3.5 pr-22 py-2.5 rounded-lg bg-white border border-neutral-300 text-neutral-900 text-xs focus:outline-none focus:border-neutral-900 transition-colors"
                       />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 cursor-pointer"
-                      >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
+                      <div className="absolute right-2 flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="p-1 text-neutral-400 hover:text-neutral-700 cursor-pointer"
+                        >
+                          {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleAdminPassHint}
+                          className="px-2.5 py-1 text-[11px] font-mono font-semibold rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-300 cursor-pointer transition-colors shadow-2xs"
+                        >
+                          Hint
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </>
               ) : (
                 <>
+                  {/* EMPLOYEE ID WITH HINT BUTTON INSIDE BOX */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-neutral-700 block">
                       Employee ID
                     </label>
-                    <div className="relative">
-                      <User className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <div className="relative flex items-center">
+                      <User className="w-4 h-4 text-neutral-400 absolute left-3 pointer-events-none" />
                       <input
                         type="text"
                         value={employeeId}
                         onChange={(e) => setEmployeeId(e.target.value)}
                         placeholder="employee@clearaudit.com"
                         required
-                        className="w-full pl-9 pr-3.5 py-2.5 rounded-lg bg-white border border-neutral-300 text-neutral-900 text-xs focus:outline-none focus:border-neutral-900 transition-colors"
+                        className="w-full pl-9 pr-16 py-2.5 rounded-lg bg-white border border-neutral-300 text-neutral-900 text-xs focus:outline-none focus:border-neutral-900 transition-colors"
                       />
+                      <button
+                        type="button"
+                        onClick={handleEmployeeIdHint}
+                        className="absolute right-2 px-2.5 py-1 text-[11px] font-mono font-semibold rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-300 cursor-pointer transition-colors shadow-2xs"
+                      >
+                        Hint
+                      </button>
                     </div>
                   </div>
+
+                  {/* PASSWORD WITH EYE & HINT BUTTON INSIDE BOX */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-neutral-700 block">
                       Password
                     </label>
-                    <div className="relative">
+                    <div className="relative flex items-center">
                       <input
                         type={showPassword ? 'text' : 'password'}
                         value={employeePass}
                         onChange={(e) => setEmployeePass(e.target.value)}
                         placeholder="••••••••"
                         required
-                        className="w-full px-3.5 pr-10 py-2.5 rounded-lg bg-white border border-neutral-300 text-neutral-900 text-xs focus:outline-none focus:border-neutral-900 transition-colors"
+                        className="w-full pl-3.5 pr-22 py-2.5 rounded-lg bg-white border border-neutral-300 text-neutral-900 text-xs focus:outline-none focus:border-neutral-900 transition-colors"
                       />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 cursor-pointer"
-                      >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
+                      <div className="absolute right-2 flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="p-1 text-neutral-400 hover:text-neutral-700 cursor-pointer"
+                        >
+                          {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleEmployeePassHint}
+                          className="px-2.5 py-1 text-[11px] font-mono font-semibold rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-300 cursor-pointer transition-colors shadow-2xs"
+                        >
+                          Hint
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </>
@@ -342,14 +330,14 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loggingIn}
-                className="w-full py-3 px-4 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 mt-2"
+                className="w-full py-3 px-4 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 mt-3"
               >
                 {loggingIn ? (
                   <Loader2 className="w-4 h-4 animate-spin text-white" />
                 ) : (
                   <>
                     <span>{activeRole === 'admin' ? 'Login as Admin' : 'Login as Employee'}</span>
-                    <ArrowRight className="w-4 h-4" />
+                    <ArrowRight className="w-3.5 h-3.5" />
                   </>
                 )}
               </button>
