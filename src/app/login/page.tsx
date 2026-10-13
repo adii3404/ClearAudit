@@ -9,23 +9,18 @@ import {
   ArrowRight,
   Sparkles,
   KeyRound,
-  CheckCircle2,
-  RefreshCw,
+  User,
+  Eye,
+  EyeOff,
+  UserCheck,
   AlertCircle,
-  ExternalLink,
-  Mail,
 } from 'lucide-react';
 
 export default function LoginPage() {
-  const { user, loading: authLoading, loginWithGoogle, loginWithCustomEmail, setRole } = useAuth();
+  const { loginAsRole } = useAuth();
   const router = useRouter();
 
-  // Step state: initial Google sign-in vs post-auth credential card
-  const [step, setStep] = useState<'google_signin' | 'authenticated_role'>(
-    user ? 'authenticated_role' : 'google_signin'
-  );
-
-  // Single pill toggle: 'admin' vs 'employee'
+  // Simple toggle between 'admin' and 'employee'
   const [activeRole, setActiveRole] = useState<'admin' | 'employee'>('admin');
 
   // Input states for Admin
@@ -36,62 +31,15 @@ export default function LoginPage() {
   const [employeeId, setEmployeeId] = useState('');
   const [employeePass, setEmployeePass] = useState('');
 
-  // Fallback real email input when Firebase Google provider is not yet enabled in console
-  const [customRealEmail, setCustomRealEmail] = useState('');
-  const [showEmailInput, setShowEmailInput] = useState(false);
-
-  const [submittingGoogle, setSubmittingGoogle] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [loggingIn, setLoggingIn] = useState(false);
   const [error, setError] = useState('');
-  const [firebaseConfigError, setFirebaseConfigError] = useState(false);
 
   // Hardcoded demo credentials
   const DEMO_ADMIN = { id: 'admin@clearaudit.com', pass: 'admin123' };
   const DEMO_EMPLOYEE = { id: 'employee@clearaudit.com', pass: 'emp123' };
 
-  // Step 1: Real Google Sign-in click (calls official Firebase popup)
-  const handleGoogleSignIn = async () => {
-    setSubmittingGoogle(true);
-    setError('');
-    setFirebaseConfigError(false);
-
-    try {
-      const res = await loginWithGoogle(activeRole);
-      if (res.success) {
-        setStep('authenticated_role');
-      } else {
-        if (res.error?.includes('configuration-not-found')) {
-          setFirebaseConfigError(true);
-          setError(
-            'Google Sign-In is not enabled yet in your Firebase Console for project "expense-auditor-01".'
-          );
-        } else if (res.error?.includes('popup-closed-by-user')) {
-          setError('Google sign-in popup was closed before completing. Please try again.');
-        } else {
-          setError(res.error || 'Google authentication failed.');
-        }
-      }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Google authentication failed';
-      setError(msg);
-    } finally {
-      setSubmittingGoogle(false);
-    }
-  };
-
-  // Sign in using user's real email
-  const handleCustomRealEmailSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!customRealEmail || !customRealEmail.includes('@')) {
-      setError('Please enter a valid email address.');
-      return;
-    }
-    loginWithCustomEmail(customRealEmail, activeRole);
-    setStep('authenticated_role');
-    setError('');
-  };
-
-  // Autofill helpers
+  // Autofill handlers
   const handleFillAdmin = () => {
     setAdminId(DEMO_ADMIN.id);
     setAdminPass(DEMO_ADMIN.pass);
@@ -104,27 +52,27 @@ export default function LoginPage() {
     setError('');
   };
 
-  // Step 2: Final Login
-  const handleFinalLogin = (e: React.FormEvent) => {
+  // Form submission
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoggingIn(true);
     setError('');
 
     if (activeRole === 'admin') {
       if (!adminId || !adminPass) {
-        setError('Please enter Admin ID and Password, or click the demo autofill button.');
+        setError('Please enter Admin ID and Password, or click the hint button to autofill.');
         setLoggingIn(false);
         return;
       }
-      setRole('admin');
+      loginAsRole('admin', adminId);
       router.push('/admin');
     } else {
       if (!employeeId || !employeePass) {
-        setError('Please enter Employee ID and Password, or click the demo autofill button.');
+        setError('Please enter Employee ID and Password, or click the hint button to autofill.');
         setLoggingIn(false);
         return;
       }
-      setRole('employee');
+      loginAsRole('employee', employeeId);
       router.push('/dashboard');
     }
   };
@@ -186,11 +134,11 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Right panel - Google Sign In & Authenticated Role Card */}
+      {/* Right panel - Simple Toggle Window & Role Card */}
       <div className="flex-1 flex items-center justify-center p-6 md:p-12 bg-neutral-50">
         <div className="w-full max-w-md space-y-6">
           {/* Mobile title */}
-          <div className="lg:hidden flex items-center gap-3 justify-center mb-4">
+          <div className="lg:hidden flex items-center gap-3 justify-center mb-2">
             <div className="w-8 h-8 rounded-lg bg-neutral-900 flex items-center justify-center">
               <Shield className="w-4 h-4 text-white" />
             </div>
@@ -199,331 +147,214 @@ export default function LoginPage() {
             </span>
           </div>
 
+          <div className="text-center space-y-1">
+            <h2 className="text-2xl font-extrabold tracking-tight text-neutral-900">
+              Sign In to Your Workspace
+            </h2>
+            <p className="text-xs text-neutral-500">
+              Select your role toggle below to access your audit portal
+            </p>
+          </div>
+
           {error && (
-            <div className="p-3.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-600 mt-0.5" />
+            <div className="p-3.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-600" />
               <span>{error}</span>
             </div>
           )}
 
-          {/* Actionable Firebase Console activation banner if Google provider is disabled */}
-          {firebaseConfigError && (
-            <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 space-y-2.5 shadow-2xs">
-              <div className="flex items-center justify-between font-bold text-amber-950">
-                <span>Enable Google in Firebase Console:</span>
-                <a
-                  href="https://console.firebase.google.com/project/expense-auditor-01/authentication"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-[11px] underline text-amber-900 font-mono"
-                >
-                  <span>Open Console</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-              </div>
-              <ol className="list-decimal list-inside space-y-1 text-[11px] text-amber-800 font-mono">
-                <li>Click <strong>&quot;Get started&quot;</strong> in Firebase Authentication</li>
-                <li>Go to <strong>&quot;Sign-in method&quot;</strong> &gt; click <strong>Google</strong></li>
-                <li>Toggle <strong>Enable</strong>, pick your support email &amp; Save</li>
-              </ol>
-              <div className="pt-2 border-t border-amber-200/80 flex items-center justify-between">
-                <span className="text-[11px] text-amber-800">Or use your real email directly:</span>
-                <button
-                  type="button"
-                  onClick={() => setShowEmailInput(true)}
-                  className="text-[11px] font-bold underline text-amber-950 cursor-pointer"
-                >
-                  Enter Real Email &rarr;
-                </button>
-              </div>
+          {/* THE SIMPLE PILL TOGGLE FOR ADMIN & EMPLOYEE */}
+          <div className="flex justify-center">
+            <div className="inline-flex p-1.5 rounded-full bg-neutral-200/90 border border-neutral-300 w-full shadow-inner">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveRole('admin');
+                  setError('');
+                }}
+                className={`flex-1 py-2 text-xs font-bold rounded-full transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                  activeRole === 'admin'
+                    ? 'bg-neutral-900 text-white shadow-sm'
+                    : 'text-neutral-600 hover:text-neutral-900'
+                }`}
+              >
+                <Shield className="w-3.5 h-3.5" />
+                <span>Admin Login</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveRole('employee');
+                  setError('');
+                }}
+                className={`flex-1 py-2 text-xs font-bold rounded-full transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                  activeRole === 'employee'
+                    ? 'bg-neutral-900 text-white shadow-sm'
+                    : 'text-neutral-600 hover:text-neutral-900'
+                }`}
+              >
+                <UserCheck className="w-3.5 h-3.5" />
+                <span>Employee Login</span>
+              </button>
             </div>
-          )}
+          </div>
 
-          {/* STEP 1: INITIAL PREVIEW — JUST GOOGLE ACCOUNT SIGN IN & SMALL CONTINUE BUTTON */}
-          {step === 'google_signin' && (
-            <div className="bg-white border border-neutral-200 rounded-2xl p-8 space-y-6 shadow-sm">
-              <div className="space-y-1">
-                <h2 className="text-xl font-bold tracking-tight text-neutral-900">
-                  Google Account Sign In
-                </h2>
-                <p className="text-xs text-neutral-500">
-                  Authenticate securely using your real Google account
+          {/* THE SINGLE CARD FOR BOTH WITH HINTS */}
+          <div className="bg-white border border-neutral-200 rounded-2xl p-6 md:p-8 shadow-sm space-y-5">
+            {/* Header & Role Info */}
+            <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
+              <div>
+                <h3 className="text-base font-bold text-neutral-900">
+                  {activeRole === 'admin' ? 'Admin Compliance Login' : 'Employee Portal Login'}
+                </h3>
+                <p className="text-xs text-neutral-500 mt-0.5">
+                  {activeRole === 'admin'
+                    ? 'Audit console, claim review & policy approvals'
+                    : 'Receipt capture, line-item audit & reimbursement feed'}
                 </p>
               </div>
-
-              {/* Small box saying continue with google */}
-              <div className="space-y-3">
-                <button
-                  type="button"
-                  onClick={handleGoogleSignIn}
-                  disabled={submittingGoogle}
-                  className="w-full py-2.5 px-4 rounded-lg bg-white hover:bg-neutral-50 border border-neutral-300 hover:border-neutral-400 text-neutral-800 text-xs font-semibold tracking-wide transition-all cursor-pointer flex items-center justify-center gap-2.5 shadow-xs disabled:opacity-60"
-                >
-                  {submittingGoogle ? (
-                    <Loader2 className="w-4 h-4 animate-spin text-neutral-600" />
-                  ) : (
-                    <>
-                      {/* Google G logo */}
-                      <svg className="w-4 h-4" viewBox="0 0 24 24">
-                        <path
-                          d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
-                          fill="#4285F4"
-                        />
-                        <path
-                          d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                          fill="#34A853"
-                        />
-                        <path
-                          d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                          fill="#FBBC05"
-                        />
-                        <path
-                          d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                          fill="#EA4335"
-                        />
-                      </svg>
-                      <span>Continue with Google</span>
-                    </>
-                  )}
-                </button>
-
-                {/* Option to type real email directly if Google console setup is pending */}
-                {showEmailInput ? (
-                  <form onSubmit={handleCustomRealEmailSubmit} className="pt-3 border-t border-neutral-150 space-y-2">
-                    <label className="text-[11px] font-semibold text-neutral-600 block">
-                      Your Real Email Address:
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="email"
-                        value={customRealEmail}
-                        onChange={(e) => setCustomRealEmail(e.target.value)}
-                        placeholder="you@yourcompany.com"
-                        required
-                        className="flex-1 px-3 py-2 text-xs rounded-lg border border-neutral-300 focus:outline-none focus:border-neutral-900"
-                      />
-                      <button
-                        type="submit"
-                        className="px-3 py-2 bg-neutral-900 text-white rounded-lg text-xs font-semibold cursor-pointer"
-                      >
-                        Submit
-                      </button>
-                    </div>
-                  </form>
-                ) : (
-                  <div className="text-center pt-1">
-                    <button
-                      type="button"
-                      onClick={() => setShowEmailInput(true)}
-                      className="text-[11px] text-neutral-500 hover:text-neutral-900 underline cursor-pointer"
-                    >
-                      Or enter your real email address
-                    </button>
-                  </div>
-                )}
-              </div>
+              <span className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-neutral-100 text-neutral-800 border border-neutral-200 font-bold uppercase">
+                {activeRole}
+              </span>
             </div>
-          )}
 
-          {/* STEP 2: AUTHENTICATED WITH GOOGLE — SINGLE PILL TOGGLE & SINGLE CARD */}
-          {step === 'authenticated_role' && (
-            <div className="space-y-4">
-              {/* Authenticated user pill header with real user information */}
-              <div className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-white border border-neutral-200 shadow-2xs">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-full bg-neutral-100 border border-neutral-200 flex items-center justify-center text-xs font-bold text-neutral-800">
-                    {user?.displayName ? user.displayName.charAt(0) : 'U'}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-semibold text-neutral-900">
-                        {user?.displayName || user?.email?.split('@')[0] || 'User'}
-                      </span>
-                      <CheckCircle2 className="w-3.5 h-3.5 text-neutral-600" />
-                    </div>
-                    <p className="text-[10px] text-neutral-500 font-mono">
-                      {user?.email || 'Authenticated'}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setStep('google_signin')}
-                  className="text-[11px] text-neutral-500 hover:text-neutral-900 flex items-center gap-1 cursor-pointer font-medium"
-                >
-                  <RefreshCw className="w-3 h-3" />
-                  <span>Switch</span>
-                </button>
-              </div>
-
-              {/* SINGLE PILL TOGGLE FOR ADMIN AND EMPLOYEE */}
-              <div className="flex justify-center">
-                <div className="inline-flex p-1 rounded-full bg-neutral-200/80 border border-neutral-300 w-full max-w-xs shadow-inner">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setActiveRole('admin');
-                      setError('');
-                    }}
-                    className={`flex-1 py-1.5 text-xs font-semibold rounded-full transition-all cursor-pointer text-center ${
-                      activeRole === 'admin'
-                        ? 'bg-neutral-900 text-white shadow-xs'
-                        : 'text-neutral-600 hover:text-neutral-900'
-                    }`}
-                  >
-                    Admin
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setActiveRole('employee');
-                      setError('');
-                    }}
-                    className={`flex-1 py-1.5 text-xs font-semibold rounded-full transition-all cursor-pointer text-center ${
-                      activeRole === 'employee'
-                        ? 'bg-neutral-900 text-white shadow-xs'
-                        : 'text-neutral-600 hover:text-neutral-900'
-                    }`}
-                  >
-                    Employee
-                  </button>
-                </div>
-              </div>
-
-              {/* ONE SINGLE CARD FOR BOTH ADMIN & EMPLOYEE */}
-              <div className="bg-white border border-neutral-200 rounded-2xl p-6 md:p-7 shadow-sm space-y-5">
-                {/* Header & Role Indicator */}
-                <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
-                  <div>
-                    <h3 className="text-base font-bold text-neutral-900">
-                      {activeRole === 'admin' ? 'Admin Audit Login' : 'Employee Portal Login'}
-                    </h3>
-                    <p className="text-xs text-neutral-500 mt-0.5">
-                      {activeRole === 'admin'
-                        ? 'Financial compliance inspection & claim authorizations'
-                        : 'Receipt capture, line-item extraction & reimbursement tracking'}
-                    </p>
-                  </div>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-700 border border-neutral-200 font-semibold uppercase">
-                    {activeRole}
+            {/* HARDCODED ID AND PASS SMALL HINT BUTTON THAT AUTOFILLS */}
+            {activeRole === 'admin' ? (
+              <button
+                type="button"
+                onClick={handleFillAdmin}
+                className="w-full p-3 rounded-xl bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 text-left transition-all cursor-pointer group flex items-center justify-between shadow-2xs"
+              >
+                <div className="flex items-center gap-2">
+                  <KeyRound className="w-4 h-4 text-neutral-700 group-hover:text-neutral-900" />
+                  <span className="text-xs text-neutral-700 font-medium">
+                    Hint: Admin demo credentials
                   </span>
                 </div>
+                <span className="text-[11px] font-mono font-bold text-neutral-900 underline">
+                  Click to fill (admin@clearaudit.com / admin123)
+                </span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleFillEmployee}
+                className="w-full p-3 rounded-xl bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 text-left transition-all cursor-pointer group flex items-center justify-between shadow-2xs"
+              >
+                <div className="flex items-center gap-2">
+                  <KeyRound className="w-4 h-4 text-neutral-700 group-hover:text-neutral-900" />
+                  <span className="text-xs text-neutral-700 font-medium">
+                    Hint: Employee demo credentials
+                  </span>
+                </div>
+                <span className="text-[11px] font-mono font-bold text-neutral-900 underline">
+                  Click to fill (employee@clearaudit.com / emp123)
+                </span>
+              </button>
+            )}
 
-                {/* HARDCODED ID AND PASS SMALL HINT BUTTON THAT AUTOFILLS */}
-                {activeRole === 'admin' ? (
-                  <button
-                    type="button"
-                    onClick={handleFillAdmin}
-                    className="w-full p-2.5 rounded-lg bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 text-left transition-all cursor-pointer group flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-2">
-                      <KeyRound className="w-3.5 h-3.5 text-neutral-600 group-hover:text-neutral-900" />
-                      <span className="text-xs text-neutral-700 font-medium">
-                        Hint: Use hardcoded Admin credentials
-                      </span>
+            {/* FORM */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {activeRole === 'admin' ? (
+                <>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-neutral-700 block">
+                      Admin ID
+                    </label>
+                    <div className="relative">
+                      <User className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        value={adminId}
+                        onChange={(e) => setAdminId(e.target.value)}
+                        placeholder="admin@clearaudit.com"
+                        required
+                        className="w-full pl-9 pr-3.5 py-2.5 rounded-lg bg-white border border-neutral-300 text-neutral-900 text-xs focus:outline-none focus:border-neutral-900 transition-colors"
+                      />
                     </div>
-                    <span className="text-[11px] font-mono font-semibold text-neutral-900 underline">
-                      Click to fill
-                    </span>
-                  </button>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-neutral-700 block">
+                      Password
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={adminPass}
+                        onChange={(e) => setAdminPass(e.target.value)}
+                        placeholder="••••••••"
+                        required
+                        className="w-full px-3.5 pr-10 py-2.5 rounded-lg bg-white border border-neutral-300 text-neutral-900 text-xs focus:outline-none focus:border-neutral-900 transition-colors"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 cursor-pointer"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-neutral-700 block">
+                      Employee ID
+                    </label>
+                    <div className="relative">
+                      <User className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        value={employeeId}
+                        onChange={(e) => setEmployeeId(e.target.value)}
+                        placeholder="employee@clearaudit.com"
+                        required
+                        className="w-full pl-9 pr-3.5 py-2.5 rounded-lg bg-white border border-neutral-300 text-neutral-900 text-xs focus:outline-none focus:border-neutral-900 transition-colors"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-neutral-700 block">
+                      Password
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={employeePass}
+                        onChange={(e) => setEmployeePass(e.target.value)}
+                        placeholder="••••••••"
+                        required
+                        className="w-full px-3.5 pr-10 py-2.5 rounded-lg bg-white border border-neutral-300 text-neutral-900 text-xs focus:outline-none focus:border-neutral-900 transition-colors"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 cursor-pointer"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <button
+                type="submit"
+                disabled={loggingIn}
+                className="w-full py-3 px-4 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 mt-2"
+              >
+                {loggingIn ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-white" />
                 ) : (
-                  <button
-                    type="button"
-                    onClick={handleFillEmployee}
-                    className="w-full p-2.5 rounded-lg bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 text-left transition-all cursor-pointer group flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-2">
-                      <KeyRound className="w-3.5 h-3.5 text-neutral-600 group-hover:text-neutral-900" />
-                      <span className="text-xs text-neutral-700 font-medium">
-                        Hint: Use hardcoded Employee credentials
-                      </span>
-                    </div>
-                    <span className="text-[11px] font-mono font-semibold text-neutral-900 underline">
-                      Click to fill
-                    </span>
-                  </button>
+                  <>
+                    <span>{activeRole === 'admin' ? 'Login as Admin' : 'Login as Employee'}</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
                 )}
-
-                {/* FORM: ASKING ADMIN ID & PASS (IF ADMIN) OR EMPLOYEE ID & PASS (IF EMPLOYEE) */}
-                <form onSubmit={handleFinalLogin} className="space-y-4">
-                  {activeRole === 'admin' ? (
-                    <>
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-neutral-700 block">
-                          Admin ID
-                        </label>
-                        <input
-                          type="text"
-                          value={adminId}
-                          onChange={(e) => setAdminId(e.target.value)}
-                          placeholder="admin@clearaudit.com"
-                          required
-                          className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-neutral-300 text-neutral-900 text-xs focus:outline-none focus:border-neutral-900 transition-colors"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-neutral-700 block">
-                          Password
-                        </label>
-                        <input
-                          type="password"
-                          value={adminPass}
-                          onChange={(e) => setAdminPass(e.target.value)}
-                          placeholder="••••••••"
-                          required
-                          className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-neutral-300 text-neutral-900 text-xs focus:outline-none focus:border-neutral-900 transition-colors"
-                        />
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-neutral-700 block">
-                          Employee ID
-                        </label>
-                        <input
-                          type="text"
-                          value={employeeId}
-                          onChange={(e) => setEmployeeId(e.target.value)}
-                          placeholder="employee@clearaudit.com"
-                          required
-                          className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-neutral-300 text-neutral-900 text-xs focus:outline-none focus:border-neutral-900 transition-colors"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-neutral-700 block">
-                          Password
-                        </label>
-                        <input
-                          type="password"
-                          value={employeePass}
-                          onChange={(e) => setEmployeePass(e.target.value)}
-                          placeholder="••••••••"
-                          required
-                          className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-neutral-300 text-neutral-900 text-xs focus:outline-none focus:border-neutral-900 transition-colors"
-                        />
-                      </div>
-                    </>
-                  )}
-
-                  <button
-                    type="submit"
-                    disabled={loggingIn}
-                    className="w-full py-2.5 px-4 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-white font-semibold text-xs transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
-                  >
-                    {loggingIn ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-white" />
-                    ) : (
-                      <>
-                        <span>{activeRole === 'admin' ? 'Login as Admin' : 'Login as Employee'}</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </>
-                    )}
-                  </button>
-                </form>
-              </div>
-            </div>
-          )}
+              </button>
+            </form>
+          </div>
         </div>
       </div>
     </div>
