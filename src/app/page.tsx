@@ -19,10 +19,12 @@ export default function HomePage() {
   }, [user, profile, loading, router]);
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-black">
+    <div className="flex items-center justify-center min-h-screen bg-neutral-50">
       <div className="flex flex-col items-center gap-4">
-        <div className="w-8 h-8 border-2 border-neutral-700 border-t-neutral-200 rounded-full animate-spin" />
-        <p className="text-sm text-neutral-500 tracking-wide">Initializing ClearAudit…</p>
+        <div className="w-8 h-8 border-2 border-neutral-300 border-t-neutral-900 rounded-full animate-spin" />
+        <p className="text-xs font-mono text-neutral-500 tracking-wide">
+          Initializing ClearAudit Corporate Expense Auditor…
+        </p>
       </div>
     </div>
   );

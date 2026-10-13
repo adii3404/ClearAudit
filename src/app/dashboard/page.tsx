@@ -306,8 +306,8 @@ export default function DashboardPage() {
 
   if (authLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-black">
-        <Loader2 className="w-6 h-6 text-neutral-400 animate-spin" />
+      <div className="flex items-center justify-center min-h-screen bg-neutral-50">
+        <Loader2 className="w-6 h-6 text-neutral-500 animate-spin" />
       </div>
     );
   }
@@ -320,18 +320,18 @@ export default function DashboardPage() {
   const complianceRate = expenses.length > 0 ? Math.round((compliantCount / expenses.length) * 100) : 100;
 
   return (
-    <div className="min-h-screen bg-black flex text-neutral-100">
-      {/* Sidebar */}
-      <aside className="w-64 border-r border-neutral-900 bg-neutral-950 flex flex-col justify-between hidden md:flex">
+    <div className="min-h-screen bg-neutral-50 flex text-neutral-900">
+      {/* Sidebar - Light Theme */}
+      <aside className="w-64 border-r border-neutral-200 bg-white flex flex-col justify-between hidden md:flex">
         <div>
           {/* Logo */}
-          <div className="p-6 border-b border-neutral-900 flex items-center justify-between">
+          <div className="p-6 border-b border-neutral-200 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-neutral-900 border border-neutral-800 flex items-center justify-center">
-                <Shield className="w-4 h-4 text-neutral-100" />
+              <div className="w-8 h-8 rounded-lg bg-neutral-900 flex items-center justify-center shadow-xs">
+                <Shield className="w-4 h-4 text-white" />
               </div>
               <div>
-                <span className="text-sm font-semibold tracking-tight text-neutral-100 block">
+                <span className="text-xs font-bold tracking-tight text-neutral-900 block leading-tight">
                   ClearAudit
                 </span>
                 <span className="text-[10px] uppercase font-mono text-neutral-500">
@@ -347,8 +347,8 @@ export default function DashboardPage() {
               href="/dashboard"
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-colors ${
                 pathname === '/dashboard'
-                  ? 'bg-neutral-900 text-neutral-100 border border-neutral-800 font-semibold'
-                  : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/50'
+                  ? 'bg-neutral-100 text-neutral-900 border border-neutral-200 font-semibold shadow-2xs'
+                  : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
               }`}
             >
               <Home className="w-4 h-4" />
@@ -357,18 +357,18 @@ export default function DashboardPage() {
 
             <button
               onClick={handleSwitchToAdmin}
-              className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-medium text-neutral-400 hover:text-neutral-100 hover:bg-neutral-900/70 transition-colors text-left cursor-pointer group"
+              className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-medium text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 transition-colors text-left cursor-pointer group"
             >
               <div className="flex items-center gap-3">
-                <Scale className="w-4 h-4 text-neutral-400 group-hover:text-neutral-200" />
+                <Scale className="w-4 h-4 text-neutral-500 group-hover:text-neutral-800" />
                 <span>Admin Audit Center</span>
               </div>
-              <ChevronRight className="w-3.5 h-3.5 text-neutral-600 group-hover:text-neutral-400" />
+              <ChevronRight className="w-3.5 h-3.5 text-neutral-400 group-hover:text-neutral-700" />
             </button>
 
             <Link
               href="/policy"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/50 transition-colors"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 transition-colors"
             >
               <FileText className="w-4 h-4" />
               <span>Expense Policy</span>
@@ -377,26 +377,26 @@ export default function DashboardPage() {
         </div>
 
         {/* User Card & Logout */}
-        <div className="p-4 border-t border-neutral-900 space-y-3">
-          <div className="p-3 rounded-lg bg-neutral-900/60 border border-neutral-800">
+        <div className="p-4 border-t border-neutral-200 space-y-3 bg-neutral-50/50">
+          <div className="p-3 rounded-lg bg-white border border-neutral-200 shadow-2xs">
             <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-full bg-neutral-800 border border-neutral-700 flex items-center justify-center text-xs font-semibold text-neutral-200">
+              <div className="w-7 h-7 rounded-full bg-neutral-100 border border-neutral-200 flex items-center justify-center text-xs font-bold text-neutral-800">
                 {user?.displayName ? user.displayName.charAt(0) : 'U'}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium text-neutral-200 truncate">
+                <p className="text-xs font-semibold text-neutral-900 truncate">
                   {user?.displayName || 'Aditya Bhandari'}
                 </p>
                 <p className="text-[10px] text-neutral-500 font-mono truncate">{user?.email}</p>
               </div>
             </div>
-            <div className="mt-2.5 pt-2 border-t border-neutral-800 flex items-center justify-between">
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300">
-                Role: Employee
+            <div className="mt-2.5 pt-2 border-t border-neutral-150 flex items-center justify-between">
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-neutral-100 text-neutral-700 border border-neutral-200">
+                Employee
               </span>
               <button
                 onClick={handleSwitchToAdmin}
-                className="text-[10px] text-neutral-400 hover:text-neutral-200 underline cursor-pointer"
+                className="text-[10px] text-neutral-600 hover:text-neutral-900 font-medium underline cursor-pointer"
               >
                 Go to Admin
               </button>
@@ -405,7 +405,7 @@ export default function DashboardPage() {
 
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-medium text-neutral-400 hover:text-neutral-100 hover:bg-neutral-900 border border-transparent hover:border-neutral-800 transition-colors cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-medium text-neutral-600 hover:text-neutral-900 hover:bg-white border border-transparent hover:border-neutral-200 transition-colors cursor-pointer"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span>Sign Out</span>
@@ -414,15 +414,15 @@ export default function DashboardPage() {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+      <main className="flex-1 flex flex-col min-w-0 overflow-y-auto bg-neutral-50">
         {/* Top Header */}
-        <header className="h-16 border-b border-neutral-900 px-6 flex items-center justify-between bg-neutral-950/40">
+        <header className="h-16 border-b border-neutral-200 px-6 flex items-center justify-between bg-white shadow-2xs">
           <div className="flex items-center gap-3">
-            <h1 className="text-sm font-semibold tracking-tight text-neutral-100">
-              Employee Expense Reimbursements
+            <h1 className="text-sm font-bold tracking-tight text-neutral-900">
+              ClearAudit Corporate Expense Auditor
             </h1>
-            <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono bg-neutral-900 text-neutral-400 border border-neutral-800">
-              <Sparkles className="w-3 h-3 text-neutral-400" />
+            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-neutral-100 text-neutral-700 border border-neutral-200">
+              <Sparkles className="w-3 h-3 text-neutral-800" />
               Gemma 4 AI Enabled
             </span>
           </div>
@@ -430,7 +430,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-3">
             <button
               onClick={handleSwitchToAdmin}
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border border-neutral-800 transition-colors cursor-pointer"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-200 transition-colors cursor-pointer"
             >
               <Shield className="w-3.5 h-3.5" />
               <span>Admin Center</span>
@@ -441,7 +441,7 @@ export default function DashboardPage() {
                 setShowModal(true);
                 setUploadMode('file');
               }}
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-neutral-100 hover:bg-white text-neutral-950 font-medium text-xs transition-all cursor-pointer shadow-sm"
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-white font-medium text-xs transition-all cursor-pointer shadow-xs"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>New Expense</span>
@@ -453,46 +453,46 @@ export default function DashboardPage() {
         <div className="p-6 md:p-8 space-y-6 max-w-7xl">
           {/* Stats Grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="p-5 rounded-xl bg-neutral-950 border border-neutral-900 space-y-1">
+            <div className="p-5 rounded-xl bg-white border border-neutral-200 shadow-2xs space-y-1">
               <p className="text-xs font-mono text-neutral-500 uppercase tracking-wider">
                 Total Expenses
               </p>
-              <p className="text-2xl font-bold font-mono text-neutral-100">
+              <p className="text-2xl font-bold font-mono text-neutral-900">
                 ${totalAmount.toFixed(2)}
               </p>
               <p className="text-[11px] text-neutral-500">{expenses.length} claims submitted</p>
             </div>
 
-            <div className="p-5 rounded-xl bg-neutral-950 border border-neutral-900 space-y-1">
+            <div className="p-5 rounded-xl bg-white border border-neutral-200 shadow-2xs space-y-1">
               <p className="text-xs font-mono text-neutral-500 uppercase tracking-wider">
                 Pending Audit
               </p>
-              <p className="text-2xl font-bold font-mono text-neutral-100">{pendingCount}</p>
+              <p className="text-2xl font-bold font-mono text-neutral-900">{pendingCount}</p>
               <p className="text-[11px] text-neutral-500">Awaiting admin review</p>
             </div>
 
-            <div className="p-5 rounded-xl bg-neutral-950 border border-neutral-900 space-y-1">
+            <div className="p-5 rounded-xl bg-white border border-neutral-200 shadow-2xs space-y-1">
               <p className="text-xs font-mono text-neutral-500 uppercase tracking-wider">
                 Approved
               </p>
-              <p className="text-2xl font-bold font-mono text-neutral-100">{approvedCount}</p>
+              <p className="text-2xl font-bold font-mono text-neutral-900">{approvedCount}</p>
               <p className="text-[11px] text-neutral-500">Processed for payout</p>
             </div>
 
-            <div className="p-5 rounded-xl bg-neutral-950 border border-neutral-900 space-y-1">
+            <div className="p-5 rounded-xl bg-white border border-neutral-200 shadow-2xs space-y-1">
               <p className="text-xs font-mono text-neutral-500 uppercase tracking-wider">
                 Compliance Rate
               </p>
-              <p className="text-2xl font-bold font-mono text-neutral-100">{complianceRate}%</p>
+              <p className="text-2xl font-bold font-mono text-neutral-900">{complianceRate}%</p>
               <p className="text-[11px] text-neutral-500">Gemma 4 policy check</p>
             </div>
           </div>
 
           {/* Real-time Expenses Table */}
-          <div className="border border-neutral-900 rounded-xl bg-neutral-950 overflow-hidden">
-            <div className="p-5 border-b border-neutral-900 flex items-center justify-between">
+          <div className="border border-neutral-200 rounded-xl bg-white shadow-2xs overflow-hidden">
+            <div className="p-5 border-b border-neutral-200 flex items-center justify-between">
               <div>
-                <h2 className="text-sm font-semibold text-neutral-100">Expense Claim History</h2>
+                <h2 className="text-sm font-bold text-neutral-900">Expense Claim History</h2>
                 <p className="text-xs text-neutral-500 mt-0.5">
                   Real-time status tracking with Gemma 4 automated policy audits
                 </p>
@@ -503,7 +503,7 @@ export default function DashboardPage() {
                   setUploadMode('camera');
                   startCamera();
                 }}
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border border-neutral-800 transition-colors cursor-pointer"
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-200 transition-colors cursor-pointer"
               >
                 <Camera className="w-3.5 h-3.5" />
                 <span>Snap Receipt</span>
@@ -512,11 +512,11 @@ export default function DashboardPage() {
 
             {expenses.length === 0 ? (
               <div className="py-16 text-center space-y-3">
-                <FileText className="w-8 h-8 text-neutral-600 mx-auto" />
-                <p className="text-sm text-neutral-400">No expenses recorded yet</p>
+                <FileText className="w-8 h-8 text-neutral-400 mx-auto" />
+                <p className="text-sm text-neutral-600">No expenses recorded yet</p>
                 <button
                   onClick={() => setShowModal(true)}
-                  className="px-4 py-2 rounded-lg bg-neutral-100 hover:bg-white text-neutral-950 text-xs font-medium cursor-pointer"
+                  className="px-4 py-2 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-medium cursor-pointer"
                 >
                   Submit First Receipt
                 </button>
@@ -525,7 +525,7 @@ export default function DashboardPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="border-b border-neutral-900 text-neutral-500 font-mono uppercase tracking-wider bg-neutral-900/30">
+                    <tr className="border-b border-neutral-200 text-neutral-500 font-mono uppercase tracking-wider bg-neutral-50/80">
                       <th className="py-3 px-4">Date</th>
                       <th className="py-3 px-4">Vendor & Category</th>
                       <th className="py-3 px-4">Amount</th>
@@ -534,44 +534,44 @@ export default function DashboardPage() {
                       <th className="py-3 px-4 text-right">Details</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-neutral-900">
+                  <tbody className="divide-y divide-neutral-100">
                     {expenses.map((exp) => (
-                      <tr key={exp.id} className="hover:bg-neutral-900/30 transition-colors">
-                        <td className="py-3.5 px-4 font-mono text-neutral-400 whitespace-nowrap">
+                      <tr key={exp.id} className="hover:bg-neutral-50/80 transition-colors">
+                        <td className="py-3.5 px-4 font-mono text-neutral-600 whitespace-nowrap">
                           {exp.date_of_purchase || '2026-10-12'}
                         </td>
                         <td className="py-3.5 px-4">
-                          <p className="font-medium text-neutral-200">{exp.vendor_name || 'Vendor'}</p>
+                          <p className="font-semibold text-neutral-900">{exp.vendor_name || 'Vendor'}</p>
                           <p className="text-[11px] text-neutral-500">
                             {exp.inferred_category || 'General'}
                           </p>
                         </td>
-                        <td className="py-3.5 px-4 font-mono font-semibold text-neutral-100 whitespace-nowrap">
+                        <td className="py-3.5 px-4 font-mono font-bold text-neutral-900 whitespace-nowrap">
                           ${(exp.total_amount || 0).toFixed(2)}
                         </td>
                         <td className="py-3.5 px-4">
                           {exp.policy_violation ? (
-                            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono bg-neutral-900 border border-red-900/60 text-red-400">
-                              <AlertTriangle className="w-3 h-3 text-red-400 flex-shrink-0" />
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono bg-red-50 border border-red-200 text-red-700">
+                              <AlertTriangle className="w-3 h-3 text-red-600 flex-shrink-0" />
                               <span className="truncate max-w-[200px]" title={exp.violation_reason || ''}>
                                 Flagged: {exp.violation_reason || 'Policy rule triggered'}
                               </span>
                             </div>
                           ) : (
-                            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono bg-neutral-900 border border-neutral-800 text-neutral-300">
-                              <CheckCircle2 className="w-3 h-3 text-neutral-400 flex-shrink-0" />
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono bg-emerald-50 border border-emerald-200 text-emerald-800">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600 flex-shrink-0" />
                               <span>Compliant ({Math.round((exp.audit_confidence_score || 0.95) * 100)}%)</span>
                             </div>
                           )}
                         </td>
                         <td className="py-3.5 px-4 whitespace-nowrap">
                           <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider ${
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-mono uppercase tracking-wider font-semibold ${
                               exp.status === 'Approved'
-                                ? 'bg-neutral-900 border border-neutral-700 text-neutral-200 font-semibold'
+                                ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
                                 : exp.status === 'Rejected'
-                                ? 'bg-red-950/40 border border-red-900/60 text-red-400'
-                                : 'bg-neutral-900 border border-neutral-800 text-neutral-400'
+                                ? 'bg-red-50 border border-red-200 text-red-800'
+                                : 'bg-neutral-100 border border-neutral-200 text-neutral-700'
                             }`}
                           >
                             {exp.status}
@@ -586,7 +586,7 @@ export default function DashboardPage() {
                               setManualAmount(exp.total_amount.toString());
                               setShowModal(true);
                             }}
-                            className="text-xs text-neutral-400 hover:text-neutral-200 underline font-mono cursor-pointer"
+                            className="text-xs text-neutral-600 hover:text-neutral-900 font-semibold underline font-mono cursor-pointer"
                           >
                             View Receipt
                           </button>
@@ -603,18 +603,18 @@ export default function DashboardPage() {
 
       {/* NEW EXPENSE MODAL (CAMERA + DRAG-DROP FILE UPLOAD) */}
       {showModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-neutral-950 border border-neutral-800 rounded-xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
-            <div className="p-5 border-b border-neutral-900 flex items-center justify-between">
+        <div className="fixed inset-0 z-50 bg-neutral-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-neutral-200 rounded-2xl w-full max-w-lg overflow-hidden shadow-xl flex flex-col max-h-[90vh]">
+            <div className="p-5 border-b border-neutral-200 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-neutral-300" />
-                <h3 className="text-sm font-semibold text-neutral-100">
+                <Sparkles className="w-4 h-4 text-neutral-900" />
+                <h3 className="text-sm font-bold text-neutral-900">
                   Submit Receipt for AI Audit
                 </h3>
               </div>
               <button
                 onClick={closeModal}
-                className="text-neutral-500 hover:text-neutral-300 transition-colors cursor-pointer"
+                className="text-neutral-400 hover:text-neutral-700 transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -622,17 +622,17 @@ export default function DashboardPage() {
 
             <div className="p-6 space-y-5 overflow-y-auto">
               {/* Mode Switcher */}
-              <div className="grid grid-cols-2 p-1 rounded-lg bg-neutral-900 border border-neutral-800">
+              <div className="grid grid-cols-2 p-1 rounded-xl bg-neutral-100 border border-neutral-200">
                 <button
                   type="button"
                   onClick={() => {
                     setUploadMode('file');
                     stopCamera();
                   }}
-                  className={`py-2 text-xs font-medium rounded-md transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                  className={`py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 ${
                     uploadMode === 'file'
-                      ? 'bg-neutral-100 text-neutral-950 font-semibold'
-                      : 'text-neutral-400 hover:text-neutral-200'
+                      ? 'bg-white text-neutral-900 shadow-xs'
+                      : 'text-neutral-600 hover:text-neutral-900'
                   }`}
                 >
                   <Upload className="w-3.5 h-3.5" />
@@ -644,10 +644,10 @@ export default function DashboardPage() {
                     setUploadMode('camera');
                     startCamera();
                   }}
-                  className={`py-2 text-xs font-medium rounded-md transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                  className={`py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 ${
                     uploadMode === 'camera'
-                      ? 'bg-neutral-100 text-neutral-950 font-semibold'
-                      : 'text-neutral-400 hover:text-neutral-200'
+                      ? 'bg-white text-neutral-900 shadow-xs'
+                      : 'text-neutral-600 hover:text-neutral-900'
                   }`}
                 >
                   <Camera className="w-3.5 h-3.5" />
@@ -657,7 +657,7 @@ export default function DashboardPage() {
 
               {/* Camera or Drop Area */}
               {uploadMode === 'camera' && !previewUrl ? (
-                <div className="relative rounded-lg overflow-hidden bg-neutral-900 aspect-[4/3] border border-neutral-800 flex items-center justify-center">
+                <div className="relative rounded-xl overflow-hidden bg-neutral-900 aspect-[4/3] border border-neutral-300 flex items-center justify-center">
                   <video
                     ref={videoRef}
                     autoPlay
@@ -670,13 +670,13 @@ export default function DashboardPage() {
                     <button
                       type="button"
                       onClick={capturePhoto}
-                      className="w-14 h-14 rounded-full border-4 border-white/90 bg-white/20 hover:bg-white/40 transition-all cursor-pointer shadow-lg"
+                      className="w-14 h-14 rounded-full border-4 border-white bg-white/20 hover:bg-white/40 transition-all cursor-pointer shadow-lg"
                       title="Capture Photo"
                     />
                   </div>
                 </div>
               ) : previewUrl ? (
-                <div className="relative rounded-lg overflow-hidden bg-neutral-900 border border-neutral-800">
+                <div className="relative rounded-xl overflow-hidden bg-neutral-100 border border-neutral-200">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={previewUrl} alt="Receipt preview" className="w-full object-contain max-h-64" />
                   <button
@@ -686,7 +686,7 @@ export default function DashboardPage() {
                       setPreviewUrl(null);
                       if (uploadMode === 'camera') startCamera();
                     }}
-                    className="absolute top-2 right-2 p-1.5 rounded-md bg-black/70 text-white hover:bg-black cursor-pointer"
+                    className="absolute top-2 right-2 p-1.5 rounded-md bg-neutral-900/80 text-white hover:bg-neutral-900 cursor-pointer"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -700,17 +700,17 @@ export default function DashboardPage() {
                   onDragLeave={() => setDragActive(false)}
                   onDrop={handleDrop}
                   onClick={() => fileInputRef.current?.click()}
-                  className={`flex flex-col items-center justify-center py-10 rounded-lg border-2 border-dashed cursor-pointer transition-colors ${
+                  className={`flex flex-col items-center justify-center py-10 rounded-xl border-2 border-dashed cursor-pointer transition-colors ${
                     dragActive
-                      ? 'border-neutral-400 bg-neutral-900'
-                      : 'border-neutral-800 hover:border-neutral-700 bg-neutral-900/40'
+                      ? 'border-neutral-900 bg-neutral-100'
+                      : 'border-neutral-300 hover:border-neutral-400 bg-neutral-50'
                   }`}
                 >
-                  <ImageIcon className="w-8 h-8 text-neutral-500 mb-2" />
-                  <p className="text-xs text-neutral-300 font-medium">
+                  <ImageIcon className="w-8 h-8 text-neutral-400 mb-2" />
+                  <p className="text-xs text-neutral-800 font-semibold">
                     Drag and drop receipt image, or <span className="underline">browse</span>
                   </p>
-                  <p className="text-[11px] text-neutral-600 mt-1 font-mono">
+                  <p className="text-[11px] text-neutral-500 mt-1 font-mono">
                     PNG, JPEG, WEBP or PDF up to 10MB
                   </p>
                   <input
@@ -726,11 +726,11 @@ export default function DashboardPage() {
               {/* Expense Context */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-mono text-neutral-400">Category</label>
+                  <label className="text-xs font-medium text-neutral-700">Category</label>
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-neutral-800 text-xs text-neutral-200 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-lg bg-white border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:border-neutral-900"
                   >
                     <option value="Meals">Meals</option>
                     <option value="Travel">Travel & Transport</option>
@@ -740,7 +740,7 @@ export default function DashboardPage() {
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-mono text-neutral-400">
+                  <label className="text-xs font-medium text-neutral-700">
                     Amount (Optional override)
                   </label>
                   <input
@@ -749,13 +749,13 @@ export default function DashboardPage() {
                     placeholder="Auto-detected by AI"
                     value={manualAmount}
                     onChange={(e) => setManualAmount(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-neutral-800 text-xs text-neutral-200 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-lg bg-white border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:border-neutral-900"
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-mono text-neutral-400">
+                <label className="text-xs font-medium text-neutral-700">
                   Business Purpose / Description
                 </label>
                 <textarea
@@ -763,12 +763,12 @@ export default function DashboardPage() {
                   placeholder="e.g. Client kickoff lunch in downtown NYC"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-neutral-800 text-xs text-neutral-200 focus:outline-none resize-none"
+                  className="w-full px-3 py-2 rounded-lg bg-white border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:border-neutral-900 resize-none"
                 />
               </div>
 
               {submitError && (
-                <div className="p-3 rounded-lg bg-neutral-900 border border-red-900/60 text-red-400 text-xs">
+                <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs">
                   {submitError}
                 </div>
               )}
@@ -777,16 +777,16 @@ export default function DashboardPage() {
                 type="button"
                 onClick={handleSubmit}
                 disabled={(!selectedFile && !previewUrl) || submitting}
-                className="w-full py-3 px-4 rounded-lg bg-neutral-100 hover:bg-white text-neutral-950 font-semibold text-xs transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full py-3 px-4 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-white font-semibold text-xs transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm"
               >
                 {submitting ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Loader2 className="w-4 h-4 animate-spin text-white" />
                     <span>Analyzing Receipt with Gemma 4…</span>
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-4 h-4" />
+                    <Sparkles className="w-4 h-4 text-white" />
                     <span>Execute AI Audit & Submit Claim</span>
                   </>
                 )}

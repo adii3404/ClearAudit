@@ -188,13 +188,13 @@ export default function AdminPage() {
     const doc = new jsPDF();
 
     // Document header
-    doc.setFillColor(15, 15, 15);
+    doc.setFillColor(245, 245, 245);
     doc.rect(0, 0, 210, 35, 'F');
-    doc.setTextColor(255, 255, 255);
+    doc.setTextColor(20, 20, 20);
     doc.setFontSize(18);
-    doc.text('ClearAudit Compliance Certificate', 14, 20);
+    doc.text('ClearAudit Corporate Expense Certificate', 14, 20);
     doc.setFontSize(9);
-    doc.setTextColor(180, 180, 180);
+    doc.setTextColor(100, 100, 100);
     doc.text('AUTOMATED FINANCIAL AUDIT REPORT • GEMMA 4 AI ENGINE', 14, 28);
 
     // Metadata
@@ -260,8 +260,8 @@ export default function AdminPage() {
 
   if (authLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-black">
-        <Loader2 className="w-6 h-6 text-neutral-400 animate-spin" />
+      <div className="flex items-center justify-center min-h-screen bg-neutral-50">
+        <Loader2 className="w-6 h-6 text-neutral-500 animate-spin" />
       </div>
     );
   }
@@ -273,26 +273,26 @@ export default function AdminPage() {
   });
 
   return (
-    <div className="min-h-screen bg-black text-neutral-100 flex flex-col">
-      {/* Top Navigation Bar */}
-      <header className="h-16 border-b border-neutral-900 bg-neutral-950 px-6 flex items-center justify-between">
+    <div className="min-h-screen bg-neutral-50 text-neutral-900 flex flex-col">
+      {/* Top Navigation Bar - Light Theme */}
+      <header className="h-16 border-b border-neutral-200 bg-white px-6 flex items-center justify-between shadow-2xs">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-neutral-900 border border-neutral-800 flex items-center justify-center">
-              <Shield className="w-4 h-4 text-neutral-100" />
+            <div className="w-8 h-8 rounded-lg bg-neutral-900 flex items-center justify-center shadow-xs">
+              <Shield className="w-4 h-4 text-white" />
             </div>
             <div>
-              <span className="text-sm font-semibold tracking-tight text-neutral-100 block">
-                ClearAudit
+              <span className="text-sm font-bold tracking-tight text-neutral-900 block leading-tight">
+                ClearAudit Corporate Expense Auditor
               </span>
               <span className="text-[10px] uppercase font-mono text-neutral-500">
                 Admin Audit Console
               </span>
             </div>
           </div>
-          <span className="hidden sm:inline-block h-4 w-px bg-neutral-800 mx-2" />
-          <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono bg-neutral-900 text-neutral-400 border border-neutral-800">
-            <Scale className="w-3 h-3 text-neutral-400" />
+          <span className="hidden sm:inline-block h-4 w-px bg-neutral-200 mx-2" />
+          <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-neutral-100 text-neutral-700 border border-neutral-200">
+            <Scale className="w-3 h-3 text-neutral-800" />
             Compliance Authority
           </span>
         </div>
@@ -300,24 +300,24 @@ export default function AdminPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={handleSwitchToEmployee}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border border-neutral-800 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-200 transition-colors cursor-pointer"
           >
             <UserCheck className="w-3.5 h-3.5" />
             <span>Employee Portal</span>
           </button>
 
-          <div className="hidden md:flex items-center gap-2 pl-3 border-l border-neutral-900">
-            <div className="w-7 h-7 rounded-full bg-neutral-800 border border-neutral-700 flex items-center justify-center text-xs font-bold text-neutral-200">
+          <div className="hidden md:flex items-center gap-2 pl-3 border-l border-neutral-200">
+            <div className="w-7 h-7 rounded-full bg-neutral-200 border border-neutral-300 flex items-center justify-center text-xs font-bold text-neutral-800">
               {user?.displayName ? user.displayName.charAt(0) : 'A'}
             </div>
-            <span className="text-xs text-neutral-400 font-mono truncate max-w-[140px]">
+            <span className="text-xs text-neutral-600 font-mono truncate max-w-[140px]">
               {user?.email}
             </span>
           </div>
 
           <button
             onClick={handleLogout}
-            className="p-2 rounded-lg text-neutral-400 hover:text-neutral-100 hover:bg-neutral-900 transition-colors cursor-pointer"
+            className="p-2 rounded-lg text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 transition-colors cursor-pointer"
             title="Sign Out"
           >
             <LogOut className="w-4 h-4" />
@@ -328,18 +328,18 @@ export default function AdminPage() {
       {/* Main Split-Pane Body */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Pane - Expense Queue */}
-        <div className="w-full md:w-[420px] lg:w-[460px] border-r border-neutral-900 flex flex-col bg-neutral-950">
+        <div className="w-full md:w-[420px] lg:w-[460px] border-r border-neutral-200 flex flex-col bg-white">
           {/* Filter Tabs */}
-          <div className="p-4 border-b border-neutral-900">
-            <div className="grid grid-cols-4 p-1 rounded-lg bg-neutral-900 border border-neutral-800 text-xs font-mono">
+          <div className="p-4 border-b border-neutral-200 bg-neutral-50/50">
+            <div className="grid grid-cols-4 p-1 rounded-xl bg-neutral-200/80 border border-neutral-300 text-xs font-mono shadow-inner">
               {(['Pending', 'Approved', 'Rejected', 'All'] as FilterTab[]).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setFilterTab(tab)}
-                  className={`py-1.5 rounded-md transition-all cursor-pointer text-center ${
+                  className={`py-1.5 rounded-lg transition-all cursor-pointer text-center font-medium ${
                     filterTab === tab
-                      ? 'bg-neutral-100 text-neutral-950 font-semibold shadow-sm'
-                      : 'text-neutral-400 hover:text-neutral-200'
+                      ? 'bg-white text-neutral-900 font-bold shadow-xs'
+                      : 'text-neutral-600 hover:text-neutral-900'
                   }`}
                 >
                   {tab}
@@ -349,10 +349,10 @@ export default function AdminPage() {
           </div>
 
           {/* Expense Claims List */}
-          <div className="flex-1 overflow-y-auto divide-y divide-neutral-900">
+          <div className="flex-1 overflow-y-auto divide-y divide-neutral-100">
             {filteredExpenses.length === 0 ? (
               <div className="p-8 text-center text-neutral-500 text-xs space-y-2">
-                <FileText className="w-6 h-6 mx-auto text-neutral-600" />
+                <FileText className="w-6 h-6 mx-auto text-neutral-400" />
                 <p>No claims in {filterTab} queue</p>
               </div>
             ) : (
@@ -364,44 +364,44 @@ export default function AdminPage() {
                     onClick={() => setSelectedExpense(exp)}
                     className={`p-4 transition-all cursor-pointer ${
                       isSelected
-                        ? 'bg-neutral-900/90 border-l-2 border-neutral-200'
-                        : 'hover:bg-neutral-900/40'
+                        ? 'bg-neutral-100/90 border-l-3 border-neutral-900 shadow-2xs'
+                        : 'hover:bg-neutral-50/80'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="space-y-1">
-                        <p className="text-xs font-semibold text-neutral-100">
+                        <p className="text-xs font-bold text-neutral-900">
                           {exp.vendor_name || 'Vendor'}
                         </p>
-                        <p className="text-[11px] text-neutral-400">
+                        <p className="text-[11px] text-neutral-500">
                           {exp.inferred_category || 'General'} • {exp.date_of_purchase}
                         </p>
                       </div>
-                      <p className="text-xs font-mono font-bold text-neutral-100">
+                      <p className="text-xs font-mono font-bold text-neutral-900">
                         ${(exp.total_amount || 0).toFixed(2)}
                       </p>
                     </div>
 
                     <div className="mt-2.5 flex items-center justify-between text-[10px] font-mono">
                       <span
-                        className={`px-1.5 py-0.5 rounded ${
+                        className={`px-2 py-0.5 rounded-full font-semibold ${
                           exp.status === 'Approved'
-                            ? 'bg-neutral-800 text-neutral-300 font-medium'
+                            ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
                             : exp.status === 'Rejected'
-                            ? 'bg-red-950/60 text-red-400'
-                            : 'bg-neutral-800 text-neutral-400'
+                            ? 'bg-red-50 border border-red-200 text-red-800'
+                            : 'bg-neutral-100 border border-neutral-200 text-neutral-700'
                         }`}
                       >
                         {exp.status}
                       </span>
 
                       {exp.policy_violation ? (
-                        <span className="flex items-center gap-1 text-red-400">
+                        <span className="flex items-center gap-1 text-red-600 font-semibold">
                           <AlertTriangle className="w-3 h-3" />
                           <span>Violation Flagged</span>
                         </span>
                       ) : (
-                        <span className="flex items-center gap-1 text-neutral-400">
+                        <span className="flex items-center gap-1 text-emerald-700 font-medium">
                           <CheckCircle2 className="w-3 h-3" />
                           <span>Compliant</span>
                         </span>
@@ -415,31 +415,31 @@ export default function AdminPage() {
         </div>
 
         {/* Right Pane - Inspection & Audit Decisions */}
-        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden bg-black">
+        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden bg-neutral-50">
           {selectedExpense ? (
             <>
               {/* Receipt Visual Viewer */}
-              <div className="flex-1 flex flex-col border-b lg:border-b-0 lg:border-r border-neutral-900 bg-neutral-950/50">
-                <div className="h-12 border-b border-neutral-900 px-4 flex items-center justify-between bg-neutral-950 text-xs font-mono text-neutral-400">
-                  <span>RECEIPT VIEWER</span>
+              <div className="flex-1 flex flex-col border-b lg:border-b-0 lg:border-r border-neutral-200 bg-neutral-100/50">
+                <div className="h-12 border-b border-neutral-200 px-4 flex items-center justify-between bg-white text-xs font-mono text-neutral-600">
+                  <span className="font-semibold text-neutral-800">RECEIPT VIEWER</span>
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => setZoom((z) => Math.min(z + 0.25, 2.5))}
-                      className="p-1.5 hover:bg-neutral-800 rounded text-neutral-300 cursor-pointer"
+                      className="p-1.5 hover:bg-neutral-100 rounded text-neutral-700 cursor-pointer"
                       title="Zoom In"
                     >
                       <ZoomIn className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => setZoom((z) => Math.max(z - 0.25, 0.75))}
-                      className="p-1.5 hover:bg-neutral-800 rounded text-neutral-300 cursor-pointer"
+                      className="p-1.5 hover:bg-neutral-100 rounded text-neutral-700 cursor-pointer"
                       title="Zoom Out"
                     >
                       <ZoomOut className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => setZoom(1)}
-                      className="p-1.5 hover:bg-neutral-800 rounded text-neutral-300 cursor-pointer"
+                      className="p-1.5 hover:bg-neutral-100 rounded text-neutral-700 cursor-pointer"
                       title="Reset Zoom"
                     >
                       <RotateCcw className="w-3.5 h-3.5" />
@@ -456,31 +456,31 @@ export default function AdminPage() {
                     <img
                       src={selectedExpense.imageUrl}
                       alt="Receipt Document"
-                      className="rounded-lg border border-neutral-800 max-h-[600px] object-contain shadow-2xl"
+                      className="rounded-xl border border-neutral-200 max-h-[580px] object-contain shadow-lg bg-white"
                     />
                   </div>
                 </div>
               </div>
 
               {/* AI Audit Findings & Decision Panel */}
-              <div className="w-full lg:w-[480px] p-6 overflow-y-auto space-y-6 bg-neutral-950">
+              <div className="w-full lg:w-[480px] p-6 overflow-y-auto space-y-6 bg-white">
                 {/* Header & Status */}
-                <div className="flex items-start justify-between pb-4 border-b border-neutral-900">
+                <div className="flex items-start justify-between pb-4 border-b border-neutral-200">
                   <div>
-                    <h2 className="text-base font-bold text-neutral-100">
+                    <h2 className="text-base font-bold text-neutral-900">
                       {selectedExpense.vendor_name}
                     </h2>
-                    <p className="text-xs text-neutral-400 font-mono mt-0.5">
+                    <p className="text-xs text-neutral-500 font-mono mt-0.5">
                       Transaction Date: {selectedExpense.date_of_purchase}
                     </p>
                   </div>
                   <span
-                    className={`px-2.5 py-1 rounded text-xs font-mono font-semibold uppercase ${
+                    className={`px-3 py-1 rounded-full text-xs font-mono font-bold uppercase ${
                       selectedExpense.status === 'Approved'
-                        ? 'bg-neutral-800 text-neutral-200 border border-neutral-700'
+                        ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                         : selectedExpense.status === 'Rejected'
-                        ? 'bg-red-950/40 text-red-400 border border-red-900/60'
-                        : 'bg-neutral-900 text-neutral-400 border border-neutral-800'
+                        ? 'bg-red-50 text-red-800 border border-red-200'
+                        : 'bg-neutral-100 text-neutral-700 border border-neutral-200'
                     }`}
                   >
                     {selectedExpense.status}
@@ -488,34 +488,34 @@ export default function AdminPage() {
                 </div>
 
                 {/* Gemma 4 AI Findings Card */}
-                <div className="p-4 rounded-xl border border-neutral-900 bg-neutral-900/40 space-y-3">
+                <div className="p-4 rounded-xl border border-neutral-200 bg-neutral-50/80 space-y-3 shadow-2xs">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 text-xs font-medium text-neutral-200">
-                      <Sparkles className="w-3.5 h-3.5 text-neutral-300" />
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-neutral-900">
+                      <Sparkles className="w-3.5 h-3.5 text-neutral-800" />
                       <span>Gemma 4 Compliance Analysis</span>
                     </div>
-                    <span className="text-[10px] font-mono text-neutral-400">
+                    <span className="text-[10px] font-mono text-neutral-600 font-semibold">
                       Score: {Math.round((selectedExpense.audit_confidence_score || 0.95) * 100)}%
                     </span>
                   </div>
 
                   {selectedExpense.policy_violation ? (
-                    <div className="p-3 rounded-lg bg-neutral-950 border border-red-900/50 space-y-1">
-                      <div className="flex items-center gap-1.5 text-red-400 text-xs font-medium">
+                    <div className="p-3 rounded-lg bg-red-50 border border-red-200 space-y-1">
+                      <div className="flex items-center gap-1.5 text-red-700 text-xs font-bold">
                         <AlertTriangle className="w-4 h-4 flex-shrink-0" />
                         <span>Policy Violation Flagged</span>
                       </div>
-                      <p className="text-xs text-neutral-300 pl-5.5 leading-relaxed">
+                      <p className="text-xs text-red-800 pl-5.5 leading-relaxed">
                         {selectedExpense.violation_reason || 'Expense does not satisfy company policy rules.'}
                       </p>
                     </div>
                   ) : (
-                    <div className="p-3 rounded-lg bg-neutral-950 border border-neutral-800 space-y-1">
-                      <div className="flex items-center gap-1.5 text-neutral-300 text-xs font-medium">
-                        <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-neutral-400" />
+                    <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 space-y-1">
+                      <div className="flex items-center gap-1.5 text-emerald-800 text-xs font-bold">
+                        <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
                         <span>Policy Verified & Compliant</span>
                       </div>
-                      <p className="text-xs text-neutral-400 pl-5.5">
+                      <p className="text-xs text-emerald-700 pl-5.5">
                         No alcohol items detected, meal within limits, weekday transaction verified.
                       </p>
                     </div>
@@ -524,21 +524,21 @@ export default function AdminPage() {
 
                 {/* Line Items Breakdown */}
                 <div className="space-y-2">
-                  <h3 className="text-xs font-mono uppercase text-neutral-400 tracking-wider">
+                  <h3 className="text-xs font-mono uppercase text-neutral-500 font-semibold tracking-wider">
                     Itemized Line Items
                   </h3>
-                  <div className="rounded-lg border border-neutral-900 bg-neutral-900/30 divide-y divide-neutral-900 text-xs">
+                  <div className="rounded-xl border border-neutral-200 bg-white divide-y divide-neutral-100 text-xs shadow-2xs">
                     {(selectedExpense.line_items || []).map((item, idx) => (
                       <div key={idx} className="p-3 flex items-center justify-between">
-                        <span className="text-neutral-300">{item.description}</span>
-                        <span className="font-mono text-neutral-100 font-medium">
+                        <span className="text-neutral-700">{item.description}</span>
+                        <span className="font-mono text-neutral-900 font-semibold">
                           ${item.amount.toFixed(2)}
                         </span>
                       </div>
                     ))}
-                    <div className="p-3 flex items-center justify-between font-bold bg-neutral-900/60">
-                      <span className="text-neutral-200">Total Claimed</span>
-                      <span className="font-mono text-neutral-100">
+                    <div className="p-3 flex items-center justify-between font-bold bg-neutral-50 rounded-b-xl border-t border-neutral-200">
+                      <span className="text-neutral-900">Total Claimed</span>
+                      <span className="font-mono text-neutral-900">
                         ${(selectedExpense.total_amount || 0).toFixed(2)} USD
                       </span>
                     </div>
@@ -547,19 +547,19 @@ export default function AdminPage() {
 
                 {/* Rejection Note if present */}
                 {selectedExpense.rejectionNote && (
-                  <div className="p-3 rounded-lg bg-neutral-900/60 border border-red-900/50 text-xs space-y-1">
-                    <p className="font-mono text-red-400 font-semibold">Audit Rejection Note:</p>
-                    <p className="text-neutral-300">{selectedExpense.rejectionNote}</p>
+                  <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-xs space-y-1">
+                    <p className="font-mono text-red-700 font-bold">Audit Rejection Note:</p>
+                    <p className="text-red-900">{selectedExpense.rejectionNote}</p>
                   </div>
                 )}
 
                 {/* Action Buttons */}
-                <div className="pt-4 border-t border-neutral-900 space-y-3">
+                <div className="pt-4 border-t border-neutral-200 space-y-3">
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       onClick={handleApprove}
                       disabled={processing || selectedExpense.status === 'Approved'}
-                      className="py-2.5 px-3 rounded-lg bg-neutral-100 hover:bg-white text-neutral-950 font-semibold text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-40"
+                      className="py-2.5 px-3 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-white font-semibold text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-40 shadow-xs"
                     >
                       <CheckCircle2 className="w-3.5 h-3.5" />
                       <span>Approve Claim</span>
@@ -567,7 +567,7 @@ export default function AdminPage() {
                     <button
                       onClick={() => setShowRejectModal(true)}
                       disabled={processing || selectedExpense.status === 'Rejected'}
-                      className="py-2.5 px-3 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-red-400 border border-neutral-800 hover:border-red-900 font-semibold text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-40"
+                      className="py-2.5 px-3 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-semibold text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-40"
                     >
                       <XCircle className="w-3.5 h-3.5" />
                       <span>Reject Claim</span>
@@ -576,7 +576,7 @@ export default function AdminPage() {
 
                   <button
                     onClick={handleExportPDF}
-                    className="w-full py-2.5 px-3 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border border-neutral-800 text-xs font-mono transition-colors cursor-pointer flex items-center justify-center gap-2"
+                    className="w-full py-2.5 px-3 rounded-lg bg-white hover:bg-neutral-50 text-neutral-800 border border-neutral-300 text-xs font-mono font-medium transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-2xs"
                   >
                     <Download className="w-3.5 h-3.5" />
                     <span>Download Audit Certificate (PDF)</span>
@@ -594,11 +594,11 @@ export default function AdminPage() {
 
       {/* REJECTION REASON MODAL */}
       {showRejectModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-neutral-950 border border-neutral-800 rounded-xl w-full max-w-md p-6 space-y-4 shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-neutral-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-neutral-200 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-xl">
             <div>
-              <h3 className="text-sm font-semibold text-neutral-100">Reject Expense Claim</h3>
-              <p className="text-xs text-neutral-400 mt-1">
+              <h3 className="text-sm font-bold text-neutral-900">Reject Expense Claim</h3>
+              <p className="text-xs text-neutral-500 mt-1">
                 Provide an audit explanation for the employee regarding this policy rejection.
               </p>
             </div>
@@ -608,20 +608,20 @@ export default function AdminPage() {
               value={rejectionNote}
               onChange={(e) => setRejectionNote(e.target.value)}
               placeholder="e.g. Alcohol items detected. Single meal limit of $50 exceeded."
-              className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-neutral-800 text-xs text-neutral-200 focus:outline-none resize-none"
+              className="w-full px-3 py-2 rounded-lg bg-white border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:border-neutral-900 resize-none"
             />
 
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 onClick={() => setShowRejectModal(false)}
-                className="px-3 py-2 rounded-lg text-xs text-neutral-400 hover:text-neutral-200 cursor-pointer"
+                className="px-3 py-2 rounded-lg text-xs text-neutral-600 hover:text-neutral-900 cursor-pointer font-medium"
               >
                 Cancel
               </button>
               <button
                 onClick={handleReject}
                 disabled={rejecting}
-                className="px-4 py-2 rounded-lg bg-red-950 hover:bg-red-900 text-red-200 border border-red-800 text-xs font-semibold cursor-pointer flex items-center gap-1.5"
+                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-semibold cursor-pointer flex items-center gap-1.5 shadow-xs"
               >
                 {rejecting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
                 <span>Confirm Rejection</span>

@@ -10,9 +10,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'ClearAudit — AI Expense Reimbursement Platform',
+  title: 'ClearAudit Corporate Expense Auditor',
   description:
-    'Enterprise-grade real-time AI expense reimbursement and audit compliance platform powered by Gemma 4.',
+    'Corporate Expense Reimbursement and Compliance Platform powered by Gemma 4 Multimodal Audit Engine.',
 };
 
 export default function RootLayout({
@@ -22,7 +22,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={inter.variable}>
-      <body className="antialiased">
+      <body className="antialiased bg-neutral-50 text-neutral-900 min-h-screen">
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

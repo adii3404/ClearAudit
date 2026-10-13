@@ -7,177 +7,200 @@ import {
   Shield,
   Loader2,
   ArrowRight,
-  CheckCircle2,
-  FileText,
-  UserCheck,
-  Scale,
   Sparkles,
+  KeyRound,
+  User,
+  CheckCircle2,
   RefreshCw,
   AlertCircle,
-  HelpCircle,
 } from 'lucide-react';
 
 export default function LoginPage() {
   const { user, profile, loading: authLoading, loginWithGoogle, setRole } = useAuth();
   const router = useRouter();
 
-  const [step, setStep] = useState<'google_form' | 'role_select'>(
-    user ? 'role_select' : 'google_form'
+  // Step state: initial Google sign-in vs post-auth credential card
+  const [step, setStep] = useState<'google_signin' | 'authenticated_role'>(
+    user ? 'authenticated_role' : 'google_signin'
   );
-  const [googleEmail, setGoogleEmail] = useState(user?.email || 'adityabhandari3404@gmail.com');
-  const [selectedRole, setSelectedRole] = useState<'admin' | 'employee'>(
-    profile?.role || (googleEmail.includes('admin') || googleEmail === 'adityabhandari3404@gmail.com' ? 'admin' : 'employee')
-  );
-  const [submitting, setSubmitting] = useState(false);
+
+  // Single pill toggle: 'admin' vs 'employee'
+  const [activeRole, setActiveRole] = useState<'admin' | 'employee'>('admin');
+
+  // Input states for Admin
+  const [adminId, setAdminId] = useState('');
+  const [adminPass, setAdminPass] = useState('');
+
+  // Input states for Employee
+  const [employeeId, setEmployeeId] = useState('');
+  const [employeePass, setEmployeePass] = useState('');
+
+  const [submittingGoogle, setSubmittingGoogle] = useState(false);
+  const [loggingIn, setLoggingIn] = useState(false);
   const [error, setError] = useState('');
 
-  // Handle Google Login Form submission (Step 1)
-  const handleGoogleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    setError('');
+  // Hardcoded demo credentials
+  const DEMO_ADMIN = { id: 'admin@clearaudit.com', pass: 'admin123' };
+  const DEMO_EMPLOYEE = { id: 'employee@clearaudit.com', pass: 'emp123' };
 
+  // Step 1: Google Sign-in click
+  const handleGoogleSignIn = async () => {
+    setSubmittingGoogle(true);
+    setError('');
     try {
-      const res = await loginWithGoogle(selectedRole, googleEmail);
+      const res = await loginWithGoogle(activeRole, 'adityabhandari3404@gmail.com');
       if (res.success) {
-        setSelectedRole(res.role);
-        setStep('role_select');
+        setStep('authenticated_role');
       } else {
-        setError('Failed to authenticate with Google. Please try again.');
+        setError('Google authentication could not be completed. Please try again.');
       }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Google authentication failed';
-      setError(msg);
+    } catch {
+      setError('Google sign-in error occurred.');
     } finally {
-      setSubmitting(false);
+      setSubmittingGoogle(false);
     }
   };
 
-  // Handle Workspace Entry (Step 2)
-  const handleEnterWorkspace = (roleToEnter: 'admin' | 'employee') => {
-    setRole(roleToEnter);
-    router.push(roleToEnter === 'admin' ? '/admin' : '/dashboard');
+  // Autofill helpers
+  const handleFillAdmin = () => {
+    setAdminId(DEMO_ADMIN.id);
+    setAdminPass(DEMO_ADMIN.pass);
+    setError('');
+  };
+
+  const handleFillEmployee = () => {
+    setEmployeeId(DEMO_EMPLOYEE.id);
+    setEmployeePass(DEMO_EMPLOYEE.pass);
+    setError('');
+  };
+
+  // Step 2: Final Login
+  const handleFinalLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoggingIn(true);
+    setError('');
+
+    if (activeRole === 'admin') {
+      if (!adminId || !adminPass) {
+        setError('Please enter Admin ID and Password, or click the demo autofill button.');
+        setLoggingIn(false);
+        return;
+      }
+      setRole('admin');
+      router.push('/admin');
+    } else {
+      if (!employeeId || !employeePass) {
+        setError('Please enter Employee ID and Password, or click the demo autofill button.');
+        setLoggingIn(false);
+        return;
+      }
+      setRole('employee');
+      router.push('/dashboard');
+    }
   };
 
   return (
-    <div className="min-h-screen bg-black flex">
-      {/* Left panel - Enterprise Branding */}
-      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 border-r border-neutral-900 bg-neutral-950/40">
+    <div className="min-h-screen bg-neutral-50 text-neutral-900 flex">
+      {/* Left panel - Light Theme Branding & AI Stats */}
+      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 lg:p-16 border-r border-neutral-200 bg-white">
         <div>
+          {/* Title */}
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-neutral-900 border border-neutral-800 flex items-center justify-center">
-              <Shield className="w-5 h-5 text-neutral-100" strokeWidth={1.75} />
+            <div className="w-9 h-9 rounded-lg bg-neutral-900 flex items-center justify-center shadow-sm">
+              <Shield className="w-5 h-5 text-white" strokeWidth={2} />
             </div>
             <div>
-              <span className="text-lg font-semibold tracking-tight text-neutral-100 block">
-                ClearAudit
-              </span>
-              <span className="text-[10px] uppercase tracking-widest text-neutral-500 font-mono">
-                Enterprise AI Compliance
+              <span className="text-base font-bold tracking-tight text-neutral-900 block">
+                ClearAudit Corporate Expense Auditor
               </span>
             </div>
           </div>
         </div>
 
-        <div className="space-y-6 max-w-lg">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neutral-900 border border-neutral-800 text-neutral-400 text-xs font-mono">
-            <Sparkles className="w-3.5 h-3.5 text-neutral-300" />
+        <div className="space-y-8 max-w-md">
+          {/* Gemma 4 Multimodal Audit Engine Badge */}
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-100 border border-neutral-200 text-neutral-700 text-xs font-mono font-medium">
+            <Sparkles className="w-3.5 h-3.5 text-neutral-900" />
             <span>Gemma 4 Multimodal Audit Engine</span>
           </div>
 
-          <h1 className="text-4xl font-bold tracking-tight leading-tight text-neutral-100">
-            Real-Time Expense
-            <br />
-            Reimbursement SaaS
-          </h1>
+          {/* Real-Time Expense Reimbursement */}
+          <div>
+            <h1 className="text-4xl font-extrabold tracking-tight leading-tight text-neutral-900">
+              Real-Time Expense
+              <br />
+              Reimbursement
+            </h1>
+          </div>
 
-          <p className="text-neutral-400 text-sm leading-relaxed">
-            Automate enterprise expense compliance with multimodal OCR and policy verification.
-            Instant line-item audits for weekend transactions, meal limits, and restricted items.
-          </p>
-
-          <div className="grid grid-cols-3 gap-4 pt-4 border-t border-neutral-900">
+          {/* Verified Stats */}
+          <div className="grid grid-cols-3 gap-6 pt-6 border-t border-neutral-200">
             <div>
-              <p className="text-2xl font-bold font-mono text-neutral-100">&lt;3s</p>
-              <p className="text-xs text-neutral-500 mt-1">Audit Latency</p>
+              <p className="text-3xl font-extrabold font-mono text-neutral-900">&lt;3s</p>
+              <p className="text-xs text-neutral-500 mt-1 font-medium">Audit Latency</p>
             </div>
             <div>
-              <p className="text-2xl font-bold font-mono text-neutral-100">99.4%</p>
-              <p className="text-xs text-neutral-500 mt-1">Policy Accuracy</p>
+              <p className="text-3xl font-extrabold font-mono text-neutral-900">99.4%</p>
+              <p className="text-xs text-neutral-500 mt-1 font-medium">Policy Accuracy</p>
             </div>
             <div>
-              <p className="text-2xl font-bold font-mono text-neutral-100">Zero</p>
-              <p className="text-xs text-neutral-500 mt-1">Manual Backlog</p>
+              <p className="text-3xl font-extrabold font-mono text-neutral-900">Zero</p>
+              <p className="text-xs text-neutral-500 mt-1 font-medium">Manual Backlog</p>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center justify-between text-xs text-neutral-600 font-mono border-t border-neutral-900 pt-6">
-          <span>ClearAudit Infrastructure</span>
-          <span>SOC2 Type II Certified</span>
+        {/* Clean minimal bottom spacer */}
+        <div className="text-xs text-neutral-400 font-mono">
+          ClearAudit Financial Infrastructure
         </div>
       </div>
 
-      {/* Right panel - Auth & Role Selection */}
-      <div className="flex-1 flex items-center justify-center p-6 md:p-12 overflow-y-auto">
-        <div className="w-full max-w-xl space-y-6">
-          {/* Mobile branding */}
-          <div className="lg:hidden flex items-center gap-3 justify-center mb-6">
-            <div className="w-8 h-8 rounded-lg bg-neutral-900 border border-neutral-800 flex items-center justify-center">
-              <Shield className="w-4 h-4 text-neutral-100" />
+      {/* Right panel - Google Sign In & Authenticated Role Card */}
+      <div className="flex-1 flex items-center justify-center p-6 md:p-12 bg-neutral-50">
+        <div className="w-full max-w-md space-y-6">
+          {/* Mobile title */}
+          <div className="lg:hidden flex items-center gap-3 justify-center mb-4">
+            <div className="w-8 h-8 rounded-lg bg-neutral-900 flex items-center justify-center">
+              <Shield className="w-4 h-4 text-white" />
             </div>
-            <span className="text-lg font-semibold tracking-tight text-neutral-100">
-              ClearAudit
+            <span className="text-sm font-bold text-neutral-900">
+              ClearAudit Corporate Expense Auditor
             </span>
           </div>
 
           {error && (
-            <div className="p-3 rounded-lg bg-neutral-900 border border-red-900/60 text-red-400 text-xs flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-400" />
+            <div className="p-3.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-600" />
               <span>{error}</span>
             </div>
           )}
 
-          {/* STEP 1: ONE CLEAN FORM FOR GOOGLE LOGIN */}
-          {step === 'google_form' && (
-            <div className="border border-neutral-800 rounded-xl bg-neutral-950 p-6 md:p-8 space-y-6 shadow-2xl">
-              <div className="space-y-1.5">
-                <h2 className="text-xl font-semibold tracking-tight text-neutral-100">
+          {/* STEP 1: INITIAL PREVIEW — JUST GOOGLE ACCOUNT SIGN IN & SMALL CONTINUE BUTTON */}
+          {step === 'google_signin' && (
+            <div className="bg-white border border-neutral-200 rounded-2xl p-8 space-y-6 shadow-sm">
+              <div className="space-y-1">
+                <h2 className="text-xl font-bold tracking-tight text-neutral-900">
                   Google Account Sign In
                 </h2>
-                <p className="text-xs text-neutral-400">
-                  Authenticate securely using your Google corporate or personal account.
+                <p className="text-xs text-neutral-500">
+                  Secure single sign-on for enterprise expense audit
                 </p>
               </div>
 
-              <form onSubmit={handleGoogleSubmit} className="space-y-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-mono text-neutral-400 uppercase tracking-wider block">
-                    Google Email Address
-                  </label>
-                  <input
-                    type="email"
-                    value={googleEmail}
-                    onChange={(e) => setGoogleEmail(e.target.value)}
-                    placeholder="name@company.com or @gmail.com"
-                    required
-                    className="w-full px-3.5 py-2.5 rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-100 text-sm focus:outline-none focus:border-neutral-500 transition-colors"
-                  />
-                  <p className="text-[11px] text-neutral-500">
-                    Use your enterprise Google email or default demo account to continue.
-                  </p>
-                </div>
-
+              {/* Small box saying continue with google */}
+              <div>
                 <button
-                  type="submit"
-                  disabled={submitting}
-                  className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-lg bg-neutral-100 hover:bg-white text-neutral-950 font-medium text-sm transition-all cursor-pointer shadow-md disabled:opacity-50"
+                  type="button"
+                  onClick={handleGoogleSignIn}
+                  disabled={submittingGoogle}
+                  className="w-full py-2.5 px-4 rounded-lg bg-white hover:bg-neutral-50 border border-neutral-300 hover:border-neutral-400 text-neutral-800 text-xs font-semibold tracking-wide transition-all cursor-pointer flex items-center justify-center gap-2.5 shadow-xs disabled:opacity-60"
                 >
-                  {submitting ? (
-                    <Loader2 className="w-4 h-4 animate-spin text-neutral-950" />
+                  {submittingGoogle ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-neutral-600" />
                   ) : (
                     <>
-                      {/* Official Google 'G' icon */}
+                      {/* Google G logo */}
                       <svg className="w-4 h-4" viewBox="0 0 24 24">
                         <path
                           d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
@@ -197,231 +220,209 @@ export default function LoginPage() {
                         />
                       </svg>
                       <span>Continue with Google</span>
-                      <ArrowRight className="w-4 h-4 text-neutral-600" />
                     </>
                   )}
                 </button>
-              </form>
-
-              <div className="pt-2 border-t border-neutral-900 flex items-center justify-between text-xs text-neutral-500 font-mono">
-                <span className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-neutral-400" />
-                  Instant Authentication
-                </span>
-                <span>Role selection follows login</span>
               </div>
             </div>
           )}
 
-          {/* STEP 2: AFTER GOOGLE AUTHENTICATION — TOGGLE & DUAL ROLE CARDS WITH HINTS */}
-          {step === 'role_select' && (
-            <div className="space-y-6">
-              {/* Authenticated user header */}
-              <div className="flex items-center justify-between p-3.5 rounded-xl bg-neutral-900/60 border border-neutral-800">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-neutral-800 border border-neutral-700 flex items-center justify-center text-xs font-bold text-neutral-200">
+          {/* STEP 2: AUTHENTICATED WITH GOOGLE — SINGLE PILL TOGGLE & SINGLE CARD */}
+          {step === 'authenticated_role' && (
+            <div className="space-y-4">
+              {/* Authenticated user pill header */}
+              <div className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-white border border-neutral-200 shadow-2xs">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-full bg-neutral-100 border border-neutral-200 flex items-center justify-center text-xs font-bold text-neutral-800">
                     {user?.displayName ? user.displayName.charAt(0) : 'G'}
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-neutral-200">
-                        {user?.displayName || 'Google User'}
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-semibold text-neutral-900">
+                        {user?.displayName || 'Aditya Bhandari'}
                       </span>
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono bg-neutral-800 text-neutral-400 border border-neutral-700">
-                        Google Verified
-                      </span>
+                      <CheckCircle2 className="w-3.5 h-3.5 text-neutral-600" />
                     </div>
-                    <p className="text-[11px] text-neutral-500 font-mono">{user?.email || googleEmail}</p>
+                    <p className="text-[10px] text-neutral-500 font-mono">
+                      {user?.email || 'adityabhandari3404@gmail.com'}
+                    </p>
                   </div>
                 </div>
                 <button
                   type="button"
-                  onClick={() => setStep('google_form')}
-                  className="text-xs text-neutral-400 hover:text-neutral-200 flex items-center gap-1 cursor-pointer transition-colors"
+                  onClick={() => setStep('google_signin')}
+                  className="text-[11px] text-neutral-500 hover:text-neutral-900 flex items-center gap-1 cursor-pointer font-medium"
                 >
                   <RefreshCw className="w-3 h-3" />
                   <span>Switch</span>
                 </button>
               </div>
 
-              {/* Toggle switch between Admin Login & Employee Login */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-mono text-neutral-400 uppercase tracking-wider">
-                    Select Login Workspace:
-                  </label>
-                  <span className="text-xs text-neutral-500 font-mono">
-                    Active: <strong className="text-neutral-200 uppercase">{selectedRole}</strong>
+              {/* SINGLE PILL TOGGLE FOR ADMIN AND EMPLOYEE */}
+              <div className="flex justify-center">
+                <div className="inline-flex p-1 rounded-full bg-neutral-200/80 border border-neutral-300 w-full max-w-xs shadow-inner">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveRole('admin');
+                      setError('');
+                    }}
+                    className={`flex-1 py-1.5 text-xs font-semibold rounded-full transition-all cursor-pointer text-center ${
+                      activeRole === 'admin'
+                        ? 'bg-neutral-900 text-white shadow-xs'
+                        : 'text-neutral-600 hover:text-neutral-900'
+                    }`}
+                  >
+                    Admin
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveRole('employee');
+                      setError('');
+                    }}
+                    className={`flex-1 py-1.5 text-xs font-semibold rounded-full transition-all cursor-pointer text-center ${
+                      activeRole === 'employee'
+                        ? 'bg-neutral-900 text-white shadow-xs'
+                        : 'text-neutral-600 hover:text-neutral-900'
+                    }`}
+                  >
+                    Employee
+                  </button>
+                </div>
+              </div>
+
+              {/* ONE SINGLE CARD FOR BOTH ADMIN & EMPLOYEE */}
+              <div className="bg-white border border-neutral-200 rounded-2xl p-6 md:p-7 shadow-sm space-y-5">
+                {/* Header & Role Indicator */}
+                <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
+                  <div>
+                    <h3 className="text-base font-bold text-neutral-900">
+                      {activeRole === 'admin' ? 'Admin Audit Login' : 'Employee Portal Login'}
+                    </h3>
+                    <p className="text-xs text-neutral-500 mt-0.5">
+                      {activeRole === 'admin'
+                        ? 'Financial compliance inspection & claim authorizations'
+                        : 'Receipt capture, line-item extraction & reimbursement tracking'}
+                    </p>
+                  </div>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-700 border border-neutral-200 font-semibold uppercase">
+                    {activeRole}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 p-1 rounded-lg bg-neutral-900 border border-neutral-800">
+                {/* HARDCODED ID AND PASS SMALL HINT BUTTON THAT AUTOFILLS */}
+                {activeRole === 'admin' ? (
                   <button
                     type="button"
-                    onClick={() => setSelectedRole('admin')}
-                    className={`py-2 text-xs font-medium rounded-md transition-all cursor-pointer flex items-center justify-center gap-2 ${
-                      selectedRole === 'admin'
-                        ? 'bg-neutral-100 text-neutral-950 font-semibold shadow-sm'
-                        : 'text-neutral-400 hover:text-neutral-200'
-                    }`}
+                    onClick={handleFillAdmin}
+                    className="w-full p-2.5 rounded-lg bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 text-left transition-all cursor-pointer group flex items-center justify-between"
                   >
-                    <Shield className="w-3.5 h-3.5" />
-                    <span>Admin Login</span>
+                    <div className="flex items-center gap-2">
+                      <KeyRound className="w-3.5 h-3.5 text-neutral-600 group-hover:text-neutral-900" />
+                      <span className="text-xs text-neutral-700 font-medium">
+                        Hint: Use hardcoded Admin credentials
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-mono font-semibold text-neutral-900 underline">
+                      Click to fill
+                    </span>
                   </button>
+                ) : (
                   <button
                     type="button"
-                    onClick={() => setSelectedRole('employee')}
-                    className={`py-2 text-xs font-medium rounded-md transition-all cursor-pointer flex items-center justify-center gap-2 ${
-                      selectedRole === 'employee'
-                        ? 'bg-neutral-100 text-neutral-950 font-semibold shadow-sm'
-                        : 'text-neutral-400 hover:text-neutral-200'
-                    }`}
+                    onClick={handleFillEmployee}
+                    className="w-full p-2.5 rounded-lg bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 text-left transition-all cursor-pointer group flex items-center justify-between"
                   >
-                    <UserCheck className="w-3.5 h-3.5" />
-                    <span>Employee Login</span>
+                    <div className="flex items-center gap-2">
+                      <KeyRound className="w-3.5 h-3.5 text-neutral-600 group-hover:text-neutral-900" />
+                      <span className="text-xs text-neutral-700 font-medium">
+                        Hint: Use hardcoded Employee credentials
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-mono font-semibold text-neutral-900 underline">
+                      Click to fill
+                    </span>
                   </button>
-                </div>
-              </div>
+                )}
 
-              {/* DUAL CARDS WITH DETAILED HINTS */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* ADMIN CARD */}
-                <div
-                  onClick={() => setSelectedRole('admin')}
-                  className={`rounded-xl border p-5 flex flex-col justify-between transition-all cursor-pointer ${
-                    selectedRole === 'admin'
-                      ? 'bg-neutral-900/90 border-neutral-400 ring-1 ring-neutral-400 shadow-lg'
-                      : 'bg-neutral-950/60 border-neutral-800/80 hover:border-neutral-700 opacity-75 hover:opacity-100'
-                  }`}
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="w-8 h-8 rounded-lg bg-neutral-800 border border-neutral-700 flex items-center justify-center">
-                        <Shield className="w-4 h-4 text-neutral-100" />
+                {/* FORM: ASKING ADMIN ID & PASS (IF ADMIN) OR EMPLOYEE ID & PASS (IF EMPLOYEE) */}
+                <form onSubmit={handleFinalLogin} className="space-y-4">
+                  {activeRole === 'admin' ? (
+                    <>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-neutral-700 block">
+                          Admin ID
+                        </label>
+                        <input
+                          type="text"
+                          value={adminId}
+                          onChange={(e) => setAdminId(e.target.value)}
+                          placeholder="admin@clearaudit.com"
+                          required
+                          className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-neutral-300 text-neutral-900 text-xs focus:outline-none focus:border-neutral-900 transition-colors"
+                        />
                       </div>
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neutral-800 border border-neutral-700 text-neutral-300">
-                        AUDIT OFFICER
-                      </span>
-                    </div>
-
-                    <div>
-                      <h3 className="text-sm font-semibold text-neutral-100">
-                        Admin Audit Center
-                      </h3>
-                      <p className="text-xs text-neutral-400 mt-0.5">
-                        Compliance & Financial Review
-                      </p>
-                    </div>
-
-                    {/* Hints & Capabilities */}
-                    <div className="space-y-2 pt-2 border-t border-neutral-800/60 text-xs text-neutral-400">
-                      <div className="flex items-start gap-1.5">
-                        <Scale className="w-3.5 h-3.5 text-neutral-300 mt-0.5 flex-shrink-0" />
-                        <span>Inspect pending claims & AI violation flags</span>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-neutral-700 block">
+                          Password
+                        </label>
+                        <input
+                          type="password"
+                          value={adminPass}
+                          onChange={(e) => setAdminPass(e.target.value)}
+                          placeholder="••••••••"
+                          required
+                          className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-neutral-300 text-neutral-900 text-xs focus:outline-none focus:border-neutral-900 transition-colors"
+                        />
                       </div>
-                      <div className="flex items-start gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-neutral-300 mt-0.5 flex-shrink-0" />
-                        <span>Approve or reject with custom audit notes</span>
+                    </>
+                  ) : (
+                    <>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-neutral-700 block">
+                          Employee ID
+                        </label>
+                        <input
+                          type="text"
+                          value={employeeId}
+                          onChange={(e) => setEmployeeId(e.target.value)}
+                          placeholder="employee@clearaudit.com"
+                          required
+                          className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-neutral-300 text-neutral-900 text-xs focus:outline-none focus:border-neutral-900 transition-colors"
+                        />
                       </div>
-                      <div className="flex items-start gap-1.5">
-                        <FileText className="w-3.5 h-3.5 text-neutral-300 mt-0.5 flex-shrink-0" />
-                        <span>Export compliance certificates via PDF</span>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-neutral-700 block">
+                          Password
+                        </label>
+                        <input
+                          type="password"
+                          value={employeePass}
+                          onChange={(e) => setEmployeePass(e.target.value)}
+                          placeholder="••••••••"
+                          required
+                          className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-neutral-300 text-neutral-900 text-xs focus:outline-none focus:border-neutral-900 transition-colors"
+                        />
                       </div>
-                    </div>
-                  </div>
+                    </>
+                  )}
 
-                  <div className="pt-4 mt-3">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEnterWorkspace('admin');
-                      }}
-                      className="w-full py-2.5 px-3 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5 bg-neutral-100 hover:bg-white text-neutral-950 font-semibold"
-                    >
-                      <span>Login as Admin</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* EMPLOYEE CARD */}
-                <div
-                  onClick={() => setSelectedRole('employee')}
-                  className={`rounded-xl border p-5 flex flex-col justify-between transition-all cursor-pointer ${
-                    selectedRole === 'employee'
-                      ? 'bg-neutral-900/90 border-neutral-400 ring-1 ring-neutral-400 shadow-lg'
-                      : 'bg-neutral-950/60 border-neutral-800/80 hover:border-neutral-700 opacity-75 hover:opacity-100'
-                  }`}
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="w-8 h-8 rounded-lg bg-neutral-800 border border-neutral-700 flex items-center justify-center">
-                        <UserCheck className="w-4 h-4 text-neutral-100" />
-                      </div>
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neutral-800 border border-neutral-700 text-neutral-300">
-                        STAFF PORTAL
-                      </span>
-                    </div>
-
-                    <div>
-                      <h3 className="text-sm font-semibold text-neutral-100">
-                        Employee Dashboard
-                      </h3>
-                      <p className="text-xs text-neutral-400 mt-0.5">
-                        Expense Submission & Claims
-                      </p>
-                    </div>
-
-                    {/* Hints & Capabilities */}
-                    <div className="space-y-2 pt-2 border-t border-neutral-800/60 text-xs text-neutral-400">
-                      <div className="flex items-start gap-1.5">
-                        <FileText className="w-3.5 h-3.5 text-neutral-300 mt-0.5 flex-shrink-0" />
-                        <span>Live camera capture & drag-and-drop receipts</span>
-                      </div>
-                      <div className="flex items-start gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-neutral-300 mt-0.5 flex-shrink-0" />
-                        <span>Instant Gemma 4 OCR & policy pre-audit in &lt;3s</span>
-                      </div>
-                      <div className="flex items-start gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-neutral-300 mt-0.5 flex-shrink-0" />
-                        <span>Real-time claim status & reimbursement feed</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pt-4 mt-3">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEnterWorkspace('employee');
-                      }}
-                      className="w-full py-2.5 px-3 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5 bg-neutral-100 hover:bg-white text-neutral-950 font-semibold"
-                    >
-                      <span>Login as Employee</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Big primary button to enter active workspace */}
-              <button
-                type="button"
-                onClick={() => handleEnterWorkspace(selectedRole)}
-                className="w-full py-3 px-4 rounded-lg bg-neutral-100 hover:bg-white text-neutral-950 font-medium text-sm transition-all cursor-pointer flex items-center justify-center gap-2 shadow-lg"
-              >
-                <span>Continue to {selectedRole === 'admin' ? 'Admin Audit Center' : 'Employee Dashboard'}</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-
-              <div className="flex items-center justify-between text-xs text-neutral-500 font-mono pt-2">
-                <span className="flex items-center gap-1">
-                  <HelpCircle className="w-3.5 h-3.5" />
-                  You can toggle roles anytime from the header
-                </span>
-                <span className="text-neutral-400 font-semibold">ClearAudit v1.0</span>
+                  <button
+                    type="submit"
+                    disabled={loggingIn}
+                    className="w-full py-2.5 px-4 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-white font-semibold text-xs transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
+                  >
+                    {loggingIn ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-white" />
+                    ) : (
+                      <>
+                        <span>{activeRole === 'admin' ? 'Login as Admin' : 'Login as Employee'}</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </>
+                    )}
+                  </button>
+                </form>
               </div>
             </div>
           )}
