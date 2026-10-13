@@ -9,14 +9,15 @@ import {
   ArrowRight,
   Sparkles,
   KeyRound,
-  User,
   CheckCircle2,
   RefreshCw,
   AlertCircle,
+  ExternalLink,
+  Mail,
 } from 'lucide-react';
 
 export default function LoginPage() {
-  const { user, profile, loading: authLoading, loginWithGoogle, setRole } = useAuth();
+  const { user, loading: authLoading, loginWithGoogle, loginWithCustomEmail, setRole } = useAuth();
   const router = useRouter();
 
   // Step state: initial Google sign-in vs post-auth credential card
@@ -35,30 +36,59 @@ export default function LoginPage() {
   const [employeeId, setEmployeeId] = useState('');
   const [employeePass, setEmployeePass] = useState('');
 
+  // Fallback real email input when Firebase Google provider is not yet enabled in console
+  const [customRealEmail, setCustomRealEmail] = useState('');
+  const [showEmailInput, setShowEmailInput] = useState(false);
+
   const [submittingGoogle, setSubmittingGoogle] = useState(false);
   const [loggingIn, setLoggingIn] = useState(false);
   const [error, setError] = useState('');
+  const [firebaseConfigError, setFirebaseConfigError] = useState(false);
 
   // Hardcoded demo credentials
   const DEMO_ADMIN = { id: 'admin@clearaudit.com', pass: 'admin123' };
   const DEMO_EMPLOYEE = { id: 'employee@clearaudit.com', pass: 'emp123' };
 
-  // Step 1: Google Sign-in click
+  // Step 1: Real Google Sign-in click (calls official Firebase popup)
   const handleGoogleSignIn = async () => {
     setSubmittingGoogle(true);
     setError('');
+    setFirebaseConfigError(false);
+
     try {
-      const res = await loginWithGoogle(activeRole, 'adityabhandari3404@gmail.com');
+      const res = await loginWithGoogle(activeRole);
       if (res.success) {
         setStep('authenticated_role');
       } else {
-        setError('Google authentication could not be completed. Please try again.');
+        if (res.error?.includes('configuration-not-found')) {
+          setFirebaseConfigError(true);
+          setError(
+            'Google Sign-In is not enabled yet in your Firebase Console for project "expense-auditor-01".'
+          );
+        } else if (res.error?.includes('popup-closed-by-user')) {
+          setError('Google sign-in popup was closed before completing. Please try again.');
+        } else {
+          setError(res.error || 'Google authentication failed.');
+        }
       }
-    } catch {
-      setError('Google sign-in error occurred.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Google authentication failed';
+      setError(msg);
     } finally {
       setSubmittingGoogle(false);
     }
+  };
+
+  // Sign in using user's real email
+  const handleCustomRealEmailSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customRealEmail || !customRealEmail.includes('@')) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+    loginWithCustomEmail(customRealEmail, activeRole);
+    setStep('authenticated_role');
+    setError('');
   };
 
   // Autofill helpers
@@ -106,7 +136,7 @@ export default function LoginPage() {
         <div>
           {/* Title */}
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-neutral-900 flex items-center justify-center shadow-sm">
+            <div className="w-9 h-9 rounded-lg bg-neutral-900 flex items-center justify-center shadow-xs">
               <Shield className="w-5 h-5 text-white" strokeWidth={2} />
             </div>
             <div>
@@ -170,9 +200,42 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <div className="p-3.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-600" />
+            <div className="p-3.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-600 mt-0.5" />
               <span>{error}</span>
+            </div>
+          )}
+
+          {/* Actionable Firebase Console activation banner if Google provider is disabled */}
+          {firebaseConfigError && (
+            <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 space-y-2.5 shadow-2xs">
+              <div className="flex items-center justify-between font-bold text-amber-950">
+                <span>Enable Google in Firebase Console:</span>
+                <a
+                  href="https://console.firebase.google.com/project/expense-auditor-01/authentication"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-[11px] underline text-amber-900 font-mono"
+                >
+                  <span>Open Console</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+              <ol className="list-decimal list-inside space-y-1 text-[11px] text-amber-800 font-mono">
+                <li>Click <strong>&quot;Get started&quot;</strong> in Firebase Authentication</li>
+                <li>Go to <strong>&quot;Sign-in method&quot;</strong> &gt; click <strong>Google</strong></li>
+                <li>Toggle <strong>Enable</strong>, pick your support email &amp; Save</li>
+              </ol>
+              <div className="pt-2 border-t border-amber-200/80 flex items-center justify-between">
+                <span className="text-[11px] text-amber-800">Or use your real email directly:</span>
+                <button
+                  type="button"
+                  onClick={() => setShowEmailInput(true)}
+                  className="text-[11px] font-bold underline text-amber-950 cursor-pointer"
+                >
+                  Enter Real Email &rarr;
+                </button>
+              </div>
             </div>
           )}
 
@@ -184,12 +247,12 @@ export default function LoginPage() {
                   Google Account Sign In
                 </h2>
                 <p className="text-xs text-neutral-500">
-                  Secure single sign-on for enterprise expense audit
+                  Authenticate securely using your real Google account
                 </p>
               </div>
 
               {/* Small box saying continue with google */}
-              <div>
+              <div className="space-y-3">
                 <button
                   type="button"
                   onClick={handleGoogleSignIn}
@@ -223,6 +286,41 @@ export default function LoginPage() {
                     </>
                   )}
                 </button>
+
+                {/* Option to type real email directly if Google console setup is pending */}
+                {showEmailInput ? (
+                  <form onSubmit={handleCustomRealEmailSubmit} className="pt-3 border-t border-neutral-150 space-y-2">
+                    <label className="text-[11px] font-semibold text-neutral-600 block">
+                      Your Real Email Address:
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="email"
+                        value={customRealEmail}
+                        onChange={(e) => setCustomRealEmail(e.target.value)}
+                        placeholder="you@yourcompany.com"
+                        required
+                        className="flex-1 px-3 py-2 text-xs rounded-lg border border-neutral-300 focus:outline-none focus:border-neutral-900"
+                      />
+                      <button
+                        type="submit"
+                        className="px-3 py-2 bg-neutral-900 text-white rounded-lg text-xs font-semibold cursor-pointer"
+                      >
+                        Submit
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="text-center pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setShowEmailInput(true)}
+                      className="text-[11px] text-neutral-500 hover:text-neutral-900 underline cursor-pointer"
+                    >
+                      Or enter your real email address
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -230,21 +328,21 @@ export default function LoginPage() {
           {/* STEP 2: AUTHENTICATED WITH GOOGLE — SINGLE PILL TOGGLE & SINGLE CARD */}
           {step === 'authenticated_role' && (
             <div className="space-y-4">
-              {/* Authenticated user pill header */}
+              {/* Authenticated user pill header with real user information */}
               <div className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-white border border-neutral-200 shadow-2xs">
                 <div className="flex items-center gap-2.5">
                   <div className="w-7 h-7 rounded-full bg-neutral-100 border border-neutral-200 flex items-center justify-center text-xs font-bold text-neutral-800">
-                    {user?.displayName ? user.displayName.charAt(0) : 'G'}
+                    {user?.displayName ? user.displayName.charAt(0) : 'U'}
                   </div>
                   <div>
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs font-semibold text-neutral-900">
-                        {user?.displayName || 'Aditya Bhandari'}
+                        {user?.displayName || user?.email?.split('@')[0] || 'User'}
                       </span>
                       <CheckCircle2 className="w-3.5 h-3.5 text-neutral-600" />
                     </div>
                     <p className="text-[10px] text-neutral-500 font-mono">
-                      {user?.email || 'adityabhandari3404@gmail.com'}
+                      {user?.email || 'Authenticated'}
                     </p>
                   </div>
                 </div>
