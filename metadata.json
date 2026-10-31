@@ -1,0 +1,6 @@
+{
+  "name": "ClearAudit",
+  "description": "ClearAudit is a minimalist B2B corporate expense reimbursement platform for streamlined receipt auditing, submission tracking, and policy compliance.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
