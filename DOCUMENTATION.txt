@@ -15,3 +15,25 @@ Key Objectives:
 - Support for Indian GST-compliant vouchers and official tax invoice generation.
 - Zero server backend requirement for base evaluation: persistent local state
   leveraging browser localStorage with deterministic data hydration.
+
+
+2. ROLE-BASED ACCESS CONTROL & AUTHENTICATION
+--------------------------------------------------------------------------------
+ClearAudit implements a dual-persona authentication matrix:
+
+A. Employee Role:
+   - Default Identity: employee@clearaudit.internal
+   - Access Permissions:
+     * Document capture via camera or direct local upload (.jpg, .png, .pdf up to 5MB).
+     * Claim metadata submission (Category, Amount in INR, Transaction Date).
+     * Ally AI contextual policy chat assistance.
+     * Status tracking of submitted reimbursement claims.
+     * Receipt token lookup and voucher slip generation.
+
+B. Administrator / Auditor Role:
+   - Default Identity: admin@clearaudit.internal
+   - Access Permissions:
+     * Complete operational visibility across company expense pipeline.
+     * Metric counters: Pending Claims (INR), Accepted & Disbursed (INR), Revoked Claims.
+     * Claim actions: Accept, Reject, Revoke (with mandatory remediation notes).
+     * Full audit trail inspection and master CSV export.
