@@ -1,0 +1,17 @@
+================================================================================
+CLEARAUDIT — CORPORATE EXPENSE REIMBURSEMENT PLATFORM
+DOCUMENTATION & ARCHITECTURAL SPECIFICATIONS
+================================================================================
+
+1. PROJECT OVERVIEW & CORE MISSION
+--------------------------------------------------------------------------------
+ClearAudit is an enterprise-grade corporate expense reimbursement and auditing
+management platform designed for streamlined business-to-business (B2B) workflows.
+
+Key Objectives:
+- Minimalist, monochrome, distraction-free corporate user interface.
+- Complete auditability for claims submission, verification, and disbursement.
+- Built-in compliance assistant ("Ally AI") to interpret travel and expense policies.
+- Support for Indian GST-compliant vouchers and official tax invoice generation.
+- Zero server backend requirement for base evaluation: persistent local state
+  leveraging browser localStorage with deterministic data hydration.
