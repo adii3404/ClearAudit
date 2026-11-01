@@ -37,3 +37,28 @@ B. Administrator / Auditor Role:
      * Metric counters: Pending Claims (INR), Accepted & Disbursed (INR), Revoked Claims.
      * Claim actions: Accept, Reject, Revoke (with mandatory remediation notes).
      * Full audit trail inspection and master CSV export.
+
+
+3. REIMBURSEMENT WORKFLOW & AUDIT LIFECYCLE
+--------------------------------------------------------------------------------
+The claim lifecycle transitions through strict sequential states:
+
+[Draft / File Ingestion]
+         │
+         ▼
+[Claim Submission] ──> Unique Token Minting (e.g., CA-B3CU-HAXA)
+         │
+         ▼
+    [Pending] ─────────────── Auditor Review Queue
+         │
+         ├───> [Accepted] ──> Disbursed / Voucher Finalized
+         ├───> [Rejected] ──> Denied / Non-reimbursable
+         └───> [Revoked]  ──> Returned with Mandatory Auditor Tip/Reason
+                                     │
+                                     └───> Re-submission Allowed
+
+Key Features:
+- Indian GST Invoice & Voucher rendering with authentic tax breakup (CGST/SGST/IGST).
+- Downloadable PNG vouchers with high-fidelity canvas generation.
+- Full CSV export capability containing claim ID, employee ID, date, category,
+  amount, status, and remarks for ERP synchronization.
