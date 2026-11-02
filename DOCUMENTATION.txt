@@ -1,39 +1,58 @@
 ================================================================================
-CLEARAUDIT — PROJECT DOCUMENTATION (v2.0)
+CLEARAUDIT — PROJECT DOCUMENTATION (v2.1)
 ================================================================================
 Last Updated: 2026-11-02
 
-ABOUT THIS PROJECT
+WHAT IS CLEARAUDIT?
 --------------------------------------------------------------------------------
-ClearAudit is a modern, monochrome B2B corporate expense reimbursement and
-auditing platform. It empowers employees to submit expense claims digitally
-— via camera capture or file upload — and gives administrators a streamlined
-audit queue to review, approve, reject, or revoke claims with full traceability.
+ClearAudit is a lightweight corporate expense reimbursement platform designed
+for mid-size to enterprise organizations operating in India. It replaces
+paper-based claim workflows with a fully digital, browser-native experience.
 
-The platform is built entirely on a client-side React 19 stack with Vite 8,
-Tailwind CSS v4, and browser localStorage for persistence. No backend server
-is required for the core workflow, making it ideal for rapid prototyping,
-demos, and internal tooling pilots.
+Employees photograph or upload receipts, fill in transaction metadata, and
+receive a unique audit tracking token. Administrators review queued claims
+through a dashboard with real-time metric counters and take action — accept,
+reject, or revoke with mandatory compliance notes.
 
-DESIGN PHILOSOPHY
+TECHNICAL ARCHITECTURE
 --------------------------------------------------------------------------------
-- Monochrome-first: A clean black-and-white aesthetic that prioritizes
-  readability and reduces visual clutter in enterprise environments.
-- Zero-friction onboarding: Default credentials baked in for instant access.
-- Audit-first architecture: Every claim gets a unique token (e.g., CA-XXXX-XXXX)
-  and follows a deterministic state machine through its lifecycle.
-- Indian compliance ready: GST-compliant voucher generation with CGST/SGST/IGST
-  breakdowns, downloadable as PNG or printable directly from the browser.
+Frontend Layer:
+  - React 19.0.1 with functional components and hooks throughout.
+  - React Router v7 for client-side routing across /login, /employee, /admin.
+  - Motion (Framer Motion successor) for subtle UI transitions.
 
-SUPPORTED EXPENSE CATEGORIES
+Styling Layer:
+  - Tailwind CSS v4 via the @tailwindcss/vite plugin (zero PostCSS config).
+  - Monochrome design tokens: grayscale palette, sharp borders, minimal shadows.
+  - Lucide React icon set for consistent, lightweight iconography.
+
+Build & Tooling:
+  - Vite 8 with ESM-first module resolution and native HMR.
+  - TypeScript 7 with strict mode enabled (tsc --noEmit for lint checks).
+  - No runtime backend — all state persisted in browser localStorage.
+
+Data Persistence:
+  - User credentials, claim records, and audit history stored in localStorage.
+  - Deterministic token generation: format CA-XXXX-XXXX (alphanumeric).
+  - CSV export for offline ERP synchronization and compliance reporting.
+
+CLAIM STATE MACHINE
 --------------------------------------------------------------------------------
-The platform supports the following reimbursement categories out of the box:
-  - Travel & Conveyance
-  - Meals & Per Diem
-  - Office Supplies
-  - Client Entertainment
-  - Telecommunications
-  - Miscellaneous / Other
+Every submitted claim follows this deterministic lifecycle:
 
-Each category maps to internal accounting codes and is surfaced in both the
-employee submission form and the admin audit queue filters.
+  DRAFT --> SUBMITTED --> PENDING --> ACCEPTED (Disbursed)
+                                  |-> REJECTED (Denied)
+                                  |-> REVOKED  (Returned with reason)
+                                        |-> Re-submission allowed
+
+State transitions are logged with timestamps and actor identity for full
+audit traceability. Revocations require a mandatory free-text remediation
+note from the administrator before the state change is committed.
+
+GST VOUCHER GENERATION
+--------------------------------------------------------------------------------
+ClearAudit generates authentic Indian corporate GST reimbursement vouchers:
+  - Tax breakdown: CGST (9%) + SGST (9%) for intra-state, IGST (18%) for inter-state.
+  - Voucher rendered via HTML5 Canvas with high-fidelity layout.
+  - Export options: downloadable PNG, browser print dialog.
+  - Each voucher is linked to its parent claim via the audit token.
