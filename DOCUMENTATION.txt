@@ -1,58 +1,94 @@
 ================================================================================
-CLEARAUDIT — PROJECT DOCUMENTATION (v2.1)
+CLEARAUDIT — PROJECT DOCUMENTATION (v3.0 — Final)
 ================================================================================
 Last Updated: 2026-11-02
 
-WHAT IS CLEARAUDIT?
+INTRODUCTION
 --------------------------------------------------------------------------------
-ClearAudit is a lightweight corporate expense reimbursement platform designed
-for mid-size to enterprise organizations operating in India. It replaces
-paper-based claim workflows with a fully digital, browser-native experience.
+ClearAudit is an enterprise-grade, browser-native expense reimbursement and
+audit compliance platform purpose-built for Indian corporate environments.
 
-Employees photograph or upload receipts, fill in transaction metadata, and
-receive a unique audit tracking token. Administrators review queued claims
-through a dashboard with real-time metric counters and take action — accept,
-reject, or revoke with mandatory compliance notes.
+It provides two distinct portals:
+  1. EMPLOYEE PORTAL — Submit, track, and manage expense claims.
+  2. ADMIN PORTAL   — Review, action, and export the complete audit queue.
 
-TECHNICAL ARCHITECTURE
+No server infrastructure is needed. The entire application runs client-side
+with React 19, Vite 8, and Tailwind CSS v4, persisting all data in the
+browser's localStorage.
+
+EMPLOYEE WORKFLOW
 --------------------------------------------------------------------------------
-Frontend Layer:
-  - React 19.0.1 with functional components and hooks throughout.
-  - React Router v7 for client-side routing across /login, /employee, /admin.
-  - Motion (Framer Motion successor) for subtle UI transitions.
+1. Login at /login with role toggle (Employee / Admin).
+2. Navigate the left sidebar: Open Camera, Upload from Local, Ask Query,
+   Expense Policy, Change Password.
+3. Capture a receipt via the live webcam scanner (with viewport guides) or
+   drag-and-drop a file (.jpg, .png, .pdf — max 5MB).
+4. Fill in metadata: Description, Transaction Date, Category, Amount (INR).
+5. Submit and receive a unique audit token (format: CA-XXXX-XXXX).
+6. Track claim status in Recent Submissions: Pending, Approved, Revoked, Rejected.
+7. Download GST-compliant voucher slips as PNG or print directly.
+8. Use the Ally AI chatbot for on-demand expense policy guidance.
 
-Styling Layer:
-  - Tailwind CSS v4 via the @tailwindcss/vite plugin (zero PostCSS config).
-  - Monochrome design tokens: grayscale palette, sharp borders, minimal shadows.
-  - Lucide React icon set for consistent, lightweight iconography.
-
-Build & Tooling:
-  - Vite 8 with ESM-first module resolution and native HMR.
-  - TypeScript 7 with strict mode enabled (tsc --noEmit for lint checks).
-  - No runtime backend — all state persisted in browser localStorage.
-
-Data Persistence:
-  - User credentials, claim records, and audit history stored in localStorage.
-  - Deterministic token generation: format CA-XXXX-XXXX (alphanumeric).
-  - CSV export for offline ERP synchronization and compliance reporting.
-
-CLAIM STATE MACHINE
+ADMIN WORKFLOW
 --------------------------------------------------------------------------------
-Every submitted claim follows this deterministic lifecycle:
+1. Login at /login as Admin.
+2. View real-time metric counters:
+   - Pending Claims (INR total)
+   - Accepted & Disbursed (INR total)
+   - Revoked Claims (count)
+   - Total Queue Records
+3. Filter claims by status: All, Pending, Accepted, Rejected, Revoked.
+4. Search claims by keyword across all fields.
+5. Take action on each claim:
+   - ACCEPT  — Authorize for disbursement.
+   - REJECT  — Mark as non-reimbursable.
+   - REVOKE  — Return with mandatory compliance note/tip.
+   - INSPECT — View and export the official GST voucher slip.
+6. Generate a comprehensive CSV report of the full audit queue.
 
-  DRAFT --> SUBMITTED --> PENDING --> ACCEPTED (Disbursed)
-                                  |-> REJECTED (Denied)
-                                  |-> REVOKED  (Returned with reason)
-                                        |-> Re-submission allowed
-
-State transitions are logged with timestamps and actor identity for full
-audit traceability. Revocations require a mandatory free-text remediation
-note from the administrator before the state change is committed.
-
-GST VOUCHER GENERATION
+TECHNOLOGY STACK
 --------------------------------------------------------------------------------
-ClearAudit generates authentic Indian corporate GST reimbursement vouchers:
-  - Tax breakdown: CGST (9%) + SGST (9%) for intra-state, IGST (18%) for inter-state.
-  - Voucher rendered via HTML5 Canvas with high-fidelity layout.
-  - Export options: downloadable PNG, browser print dialog.
-  - Each voucher is linked to its parent claim via the audit token.
+Component            | Technology            | Version
+---------------------|-----------------------|--------
+UI Framework         | React                 | 19.0.1
+Routing              | React Router          | 7.18.5
+Build System         | Vite                  | 8.3.0
+Language             | TypeScript            | 7.0.2
+CSS Framework        | Tailwind CSS          | 4.3.3
+Icons                | Lucide React          | 0.546.0
+Animations           | Motion                | 12.23.24
+AI Chat (optional)   | @google/genai         | 2.4.0
+Backend (optional)   | Express               | 4.21.2
+
+SETUP & COMMANDS
+--------------------------------------------------------------------------------
+Prerequisites: Node.js v18+ and npm.
+
+  # Clone the repository
+  $ git clone https://github.com/adii3404/ClearAudit.git
+  $ cd ClearAudit
+
+  # Install dependencies (legacy peer deps needed for esbuild/vite compat)
+  $ npm install --legacy-peer-deps
+
+  # Start the development server on port 3000
+  $ npm run dev
+
+  # Type-check the codebase
+  $ npm run lint
+
+  # Build for production
+  $ npm run build
+
+DEFAULT CREDENTIALS
+--------------------------------------------------------------------------------
+Role       | Email                          | Password
+-----------|--------------------------------|-------------
+Employee   | employee@clearaudit.internal   | password123
+Admin      | admin@clearaudit.internal      | adminpass123
+
+Credentials can be changed in-app and persist via localStorage.
+
+================================================================================
+END OF DOCUMENTATION
+================================================================================
