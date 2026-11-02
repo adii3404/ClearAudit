@@ -1,88 +1,39 @@
 ================================================================================
-CLEARAUDIT — CORPORATE EXPENSE REIMBURSEMENT PLATFORM
-DOCUMENTATION & ARCHITECTURAL SPECIFICATIONS
+CLEARAUDIT — PROJECT DOCUMENTATION (v2.0)
 ================================================================================
+Last Updated: 2026-11-02
 
-1. PROJECT OVERVIEW & CORE MISSION
+ABOUT THIS PROJECT
 --------------------------------------------------------------------------------
-ClearAudit is an enterprise-grade corporate expense reimbursement and auditing
-management platform designed for streamlined business-to-business (B2B) workflows.
+ClearAudit is a modern, monochrome B2B corporate expense reimbursement and
+auditing platform. It empowers employees to submit expense claims digitally
+— via camera capture or file upload — and gives administrators a streamlined
+audit queue to review, approve, reject, or revoke claims with full traceability.
 
-Key Objectives:
-- Minimalist, monochrome, distraction-free corporate user interface.
-- Complete auditability for claims submission, verification, and disbursement.
-- Built-in compliance assistant ("Ally AI") to interpret travel and expense policies.
-- Support for Indian GST-compliant vouchers and official tax invoice generation.
-- Zero server backend requirement for base evaluation: persistent local state
-  leveraging browser localStorage with deterministic data hydration.
+The platform is built entirely on a client-side React 19 stack with Vite 8,
+Tailwind CSS v4, and browser localStorage for persistence. No backend server
+is required for the core workflow, making it ideal for rapid prototyping,
+demos, and internal tooling pilots.
 
-
-2. ROLE-BASED ACCESS CONTROL & AUTHENTICATION
+DESIGN PHILOSOPHY
 --------------------------------------------------------------------------------
-ClearAudit implements a dual-persona authentication matrix:
+- Monochrome-first: A clean black-and-white aesthetic that prioritizes
+  readability and reduces visual clutter in enterprise environments.
+- Zero-friction onboarding: Default credentials baked in for instant access.
+- Audit-first architecture: Every claim gets a unique token (e.g., CA-XXXX-XXXX)
+  and follows a deterministic state machine through its lifecycle.
+- Indian compliance ready: GST-compliant voucher generation with CGST/SGST/IGST
+  breakdowns, downloadable as PNG or printable directly from the browser.
 
-A. Employee Role:
-   - Default Identity: employee@clearaudit.internal
-   - Access Permissions:
-     * Document capture via camera or direct local upload (.jpg, .png, .pdf up to 5MB).
-     * Claim metadata submission (Category, Amount in INR, Transaction Date).
-     * Ally AI contextual policy chat assistance.
-     * Status tracking of submitted reimbursement claims.
-     * Receipt token lookup and voucher slip generation.
-
-B. Administrator / Auditor Role:
-   - Default Identity: admin@clearaudit.internal
-   - Access Permissions:
-     * Complete operational visibility across company expense pipeline.
-     * Metric counters: Pending Claims (INR), Accepted & Disbursed (INR), Revoked Claims.
-     * Claim actions: Accept, Reject, Revoke (with mandatory remediation notes).
-     * Full audit trail inspection and master CSV export.
-
-
-3. REIMBURSEMENT WORKFLOW & AUDIT LIFECYCLE
+SUPPORTED EXPENSE CATEGORIES
 --------------------------------------------------------------------------------
-The claim lifecycle transitions through strict sequential states:
+The platform supports the following reimbursement categories out of the box:
+  - Travel & Conveyance
+  - Meals & Per Diem
+  - Office Supplies
+  - Client Entertainment
+  - Telecommunications
+  - Miscellaneous / Other
 
-[Draft / File Ingestion]
-         │
-         ▼
-[Claim Submission] ──> Unique Token Minting (e.g., CA-B3CU-HAXA)
-         │
-         ▼
-    [Pending] ─────────────── Auditor Review Queue
-         │
-         ├───> [Accepted] ──> Disbursed / Voucher Finalized
-         ├───> [Rejected] ──> Denied / Non-reimbursable
-         └───> [Revoked]  ──> Returned with Mandatory Auditor Tip/Reason
-                                     │
-                                     └───> Re-submission Allowed
-
-Key Features:
-- Indian GST Invoice & Voucher rendering with authentic tax breakup (CGST/SGST/IGST).
-- Downloadable PNG vouchers with high-fidelity canvas generation.
-- Full CSV export capability containing claim ID, employee ID, date, category,
-  amount, status, and remarks for ERP synchronization.
-
-
-4. TECHNICAL STACK & RUNTIME CONFIGURATION
---------------------------------------------------------------------------------
-Architecture Specifications:
-- UI Runtime: React 19 (19.0.1) & React Router v7
-- Build Tool: Vite 8 with ESM bundle optimization
-- Typography & Styling: Tailwind CSS v4 with custom monochrome styling tokens
-- Iconography: Lucide React
-- Animation Engine: Motion (formerly Framer Motion)
-
-Development & Production Commands:
-- Install Dependencies:
-  $ npm install --legacy-peer-deps
-- Run Local Dev Server:
-  $ npm run dev -- --port=3000 --host=0.0.0.0
-- Run TypeScript Verification:
-  $ npm run lint
-- Build Production Distribution:
-  $ npm run build
-
-================================================================================
-END OF DOCUMENTATION
-================================================================================
+Each category maps to internal accounting codes and is surfaced in both the
+employee submission form and the admin audit queue filters.
